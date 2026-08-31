@@ -450,38 +450,42 @@
   .focus-ui{
     position:fixed;inset:0;z-index:80;pointer-events:none;
     display:flex;align-items:flex-end;justify-content:center;
-    padding:0 1rem 4svh;
+    padding:0 1rem 3svh;
   }
+  .focus-ui[hidden]{display:none}  /* display:flex must not defeat the hidden attribute */
   .focus-panel{
-    pointer-events:auto;position:relative;width:min(560px,94vw);
-    background:rgba(8,15,29,.93);border:1px solid var(--line);border-radius:20px;
-    padding:1.4rem 1.5rem 1.1rem;backdrop-filter:blur(12px);
-    box-shadow:0 30px 80px rgba(4,8,16,.75);
+    pointer-events:auto;position:relative;width:min(420px,94vw);
+    background:rgba(8,15,29,.9);border:1px solid var(--line);border-radius:16px;
+    padding:.85rem 1rem .7rem;backdrop-filter:blur(12px);
+    box-shadow:0 22px 60px rgba(4,8,16,.7);
   }
   .focus-close{
-    position:absolute;top:.85rem;right:.9rem;width:32px;height:32px;
+    position:absolute;top:.6rem;right:.65rem;width:26px;height:26px;
     background:none;border:1px solid var(--line);color:var(--ice-dim);
-    border-radius:50%;font-size:.85rem;
+    border-radius:50%;font-size:.72rem;line-height:1;
   }
   .focus-close:hover{color:var(--cloud);border-color:var(--ice)}
-  .focus-way{font-family:"IBM Plex Mono",monospace;font-size:.66rem;
-    letter-spacing:.26em;text-transform:uppercase;color:var(--orange-lit)}
+  .focus-way{font-family:"IBM Plex Mono",monospace;font-size:.6rem;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--orange-lit)}
   #focusName{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
-    font-size:1.45rem;margin:.25rem 0 .5rem}
-  .focus-fact{color:var(--ice-dim);font-size:.87rem;line-height:1.65}
-  .focus-holder{margin-top:.65rem;font-size:.84rem;color:var(--ice);font-weight:500}
-  .focus-row{display:flex;gap:.6rem;margin-top:1rem}
+    font-size:1.05rem;margin:.15rem 0 .3rem;padding-right:1.6rem}
+  .focus-fact{
+    color:var(--ice-dim);font-size:.74rem;line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .focus-holder{margin-top:.4rem;font-size:.74rem;color:var(--ice);font-weight:500}
+  .focus-row{display:flex;gap:.5rem;margin-top:.6rem;align-items:center}
   .orbit-btn{
-    flex:1;height:46px;border-radius:12px;border:1px solid var(--line);
-    background:rgba(191,227,255,.08);color:var(--ice);font-weight:700;
+    flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
+    background:rgba(191,227,255,.08);color:var(--ice);font-weight:700;font-size:1rem;
     user-select:none;touch-action:none;
   }
   .orbit-btn:active{background:var(--ice);color:var(--night)}
   .focus-claim{
-    flex:1.4;height:46px;border-radius:12px;border:none;
-    background:var(--orange);color:#fff;font-weight:700;
+    flex:1;height:40px;border-radius:11px;border:none;
+    background:var(--orange);color:#fff;font-weight:700;font-size:.88rem;
   }
-  .focus-hint{margin-top:.6rem;text-align:center;font-size:.7rem;color:var(--ice-dim)}
+  .focus-hint{margin-top:.45rem;text-align:center;font-size:.64rem;color:var(--ice-dim)}
   .spot-btn-row{display:flex;gap:.6rem;margin-top:.9rem}
   .spot-btn-row .spot-btn{margin-top:0;flex:1}
   .spot-view{
@@ -553,11 +557,11 @@
     <p class="focus-fact" id="focusFact"></p>
     <p class="focus-holder" id="focusHolder"></p>
     <div class="focus-row">
-      <button class="orbit-btn" id="orbitL" aria-label="Rotate view left">⟲&nbsp;hold</button>
+      <button class="orbit-btn" id="orbitL" aria-label="Rotate view left">⟲</button>
       <button class="focus-claim" id="focusClaim">Claim → $1</button>
-      <button class="orbit-btn" id="orbitR" aria-label="Rotate view right">hold&nbsp;⟳</button>
+      <button class="orbit-btn" id="orbitR" aria-label="Rotate view right">⟳</button>
     </div>
-    <p class="focus-hint">Hold ⟲ / ⟳ (or the arrow keys) to circle the spot — 360°.</p>
+    <p class="focus-hint">Drag anywhere to look around · hold ⟲/⟳ · it slowly circles on its own.</p>
   </div>
 </div>
 
@@ -1572,7 +1576,7 @@
   }
 
   /* ---------- 360° focus mode ---------- */
-  let focus = null, orbitTimer = null;
+  let focus = null, orbitTimer = null, autoTimer = null, dragX = null, lastInteract = 0;
   function focusSpot(rank){
     if(!three || !terrainOn){ return; }
     const idx = SPOTS - rank;
@@ -1587,10 +1591,25 @@
       : "🏳️ This waypoint is open.";
     $("focusClaim").textContent = (s ? "Cut in → $" : "Claim → $") + priceFor(rank);
     $("focusUI").hidden = false;
+    lastInteract = Date.now();
+    startAuto();
     renderFocusFrame();
   }
+  /* gentle idle auto-orbit: circles the spot after a few quiet seconds */
+  function startAuto(){
+    stopAuto();
+    autoTimer = setInterval(()=>{
+      if(focus && dragX === null && !orbitTimer && Date.now() - lastInteract > 2500){
+        focus.az += 0.0045;
+        renderFocusFrame();
+      }
+    }, 30);
+  }
+  function stopAuto(){ if(autoTimer){ clearInterval(autoTimer); autoTimer = null; } }
   function closeFocus(){
     stopOrbit();
+    stopAuto();
+    dragX = null;
     focus = null;
     $("focusUI").hidden = true;
     applyProgress(lastT);   /* hand sky + camera back to the scroll position */
@@ -1620,11 +1639,28 @@
   }
   function startOrbit(dir){
     stopOrbit();
+    lastInteract = Date.now();
     orbitTimer = setInterval(()=>{
-      if(focus){ focus.az += dir * 0.035; renderFocusFrame(); }
+      if(focus){ focus.az += dir * 0.035; lastInteract = Date.now(); renderFocusFrame(); }
     }, 30);
   }
   function stopOrbit(){ if(orbitTimer){ clearInterval(orbitTimer); orbitTimer = null; } }
+  /* drag anywhere on the scene to look around while focused */
+  document.addEventListener("pointerdown", e=>{
+    if(!focus) return;
+    if(e.target.closest(".focus-panel,a,button,input,select,.hud,.panel,.flag-card")) return;
+    dragX = e.clientX;
+    lastInteract = Date.now();
+  });
+  document.addEventListener("pointermove", e=>{
+    if(!focus || dragX === null) return;
+    focus.az += (e.clientX - dragX) * 0.006;
+    dragX = e.clientX;
+    lastInteract = Date.now();
+    renderFocusFrame();
+  });
+  ["pointerup", "pointercancel"].forEach(ev=>
+    document.addEventListener(ev, ()=>{ dragX = null; }));
   $("focusClose").addEventListener("click", closeFocus);
   [["orbitL", 1], ["orbitR", -1]].forEach(([id, dir])=>{
     const b = $(id);
@@ -1633,8 +1669,8 @@
   });
   document.addEventListener("keydown", e=>{
     if(!focus) return;
-    if(e.key === "ArrowLeft"){ focus.az += 0.09; renderFocusFrame(); e.preventDefault(); }
-    else if(e.key === "ArrowRight"){ focus.az -= 0.09; renderFocusFrame(); e.preventDefault(); }
+    if(e.key === "ArrowLeft"){ focus.az += 0.09; lastInteract = Date.now(); renderFocusFrame(); e.preventDefault(); }
+    else if(e.key === "ArrowRight"){ focus.az -= 0.09; lastInteract = Date.now(); renderFocusFrame(); e.preventDefault(); }
     else if(e.key === "Escape"){ closeFocus(); }
   });
   $("focusClaim").addEventListener("click", ()=>{
