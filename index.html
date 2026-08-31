@@ -487,6 +487,42 @@
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
   }
   .focus-holder{margin-top:.4rem;font-size:.74rem;color:var(--ice);font-weight:500}
+  .focus-sponsor{
+    display:flex;align-items:center;gap:.6rem;margin-top:.55rem;
+    background:rgba(191,227,255,.06);border:1px solid var(--line);
+    border-radius:12px;padding:.55rem .65rem;
+  }
+  .focus-sponsor img{width:38px;height:38px;border-radius:9px;background:#fff;flex:none}
+  .fs-main{flex:1;min-width:0}
+  .fs-main a{
+    color:var(--cloud);font-weight:800;font-family:"Bricolage Grotesque",sans-serif;
+    font-size:.96rem;text-decoration:none;overflow-wrap:anywhere;
+  }
+  .fs-main a:hover{color:var(--orange-lit)}
+  .fs-main p{
+    color:var(--ice-dim);font-size:.7rem;margin-top:.1rem;line-height:1.4;
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .fs-badge{
+    display:inline-block;font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;
+    color:#9ADBBB;border:1px solid rgba(105,208,139,.45);border-radius:999px;
+    padding:.12rem .45rem;margin-left:.35rem;vertical-align:middle;white-space:nowrap;
+  }
+  .fs-visit{
+    flex:none;background:var(--orange);color:#fff;font-weight:700;font-size:.74rem;
+    border-radius:9px;padding:.5rem .7rem;text-decoration:none;white-space:nowrap;
+  }
+  .fs-visit:hover{background:var(--orange-lit)}
+  .fs-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-top:.45rem}
+  .fs-stats span{
+    background:rgba(6,12,24,.6);border:1px solid var(--line);border-radius:10px;
+    padding:.42rem .25rem;text-align:center;font-size:.56rem;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ice-dim);
+  }
+  .fs-stats b{
+    display:block;font-family:"IBM Plex Mono",monospace;font-size:.82rem;
+    color:var(--orange-lit);margin-bottom:.12rem;letter-spacing:0;
+  }
   .focus-row{display:flex;gap:.5rem;margin-top:.6rem;align-items:center}
   .orbit-btn{
     flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
@@ -606,6 +642,20 @@
     <h3 id="focusName">—</h3>
     <p class="focus-fact" id="focusFact"></p>
     <p class="focus-holder" id="focusHolder"></p>
+    <div class="focus-sponsor" id="focusSponsor" hidden>
+      <img id="fsLogo" alt="">
+      <span class="fs-main">
+        <a id="fsLink" target="_blank" rel="sponsored noopener nofollow"></a><span class="fs-badge">✓ verified</span>
+        <p id="fsTag"></p>
+      </span>
+      <a class="fs-visit" id="fsVisit" target="_blank" rel="sponsored noopener nofollow">Visit site ↗</a>
+    </div>
+    <div class="fs-stats" id="fsStats" hidden>
+      <span><b id="fsRank">#1</b>rank</span>
+      <span><b id="fsPaid">$0</b>paid</span>
+      <span><b id="fsClicks">0</b>clicks</span>
+      <span><b id="fsWhen">—</b>claimed</span>
+    </div>
     <div class="focus-row">
       <button class="orbit-btn" id="orbitL" aria-label="Rotate view left">⟲</button>
       <button class="orbit-btn" id="zoomOut" aria-label="Zoom out">−</button>
@@ -947,14 +997,14 @@
     try{
       const h = { apikey: BACKEND.key, Authorization: "Bearer " + BACKEND.key };
       const [spotsRes, statsRes] = await Promise.all([
-        fetch(BACKEND.url + "/rest/v1/mountain_spots?select=rank,domain,tag,price&order=rank", {headers:h}),
+        fetch(BACKEND.url + "/rest/v1/mountain_spots?select=rank,domain,tag,price,claimed_at&order=rank", {headers:h}),
         fetch(BACKEND.url + "/rest/v1/mountain_stats?select=*", {headers:h})
       ]);
       if(!spotsRes.ok || !statsRes.ok) throw new Error("backend " + spotsRes.status);
       const rows = await spotsRes.json();
       const [stats] = await statsRes.json();
       state = { spots: Array(SPOTS).fill(null), raised: stats ? stats.raised : 0 };
-      rows.forEach(r=>{ if(r.domain) state.spots[r.rank-1] = {domain:r.domain, tag:r.tag||"", price:r.price}; });
+      rows.forEach(r=>{ if(r.domain) state.spots[r.rank-1] = {domain:r.domain, tag:r.tag||"", price:r.price, claimed_at:r.claimed_at}; });
       LIVE = true;
       render();
       renderFlags3D();
@@ -1187,12 +1237,13 @@
      A client-only site cannot enforce payment — you need the webhook. */
   function placeFlag(rank, domain, tag, price){
     const i = rank - 1;
+    const entry = {domain, tag, price, claimed_at: new Date().toISOString()};
     if(state.spots[i] === null){
-      state.spots[i] = {domain, tag, price};
+      state.spots[i] = entry;
     }else{
       /* cut in: insert, everyone below slides toward the next open camp;
          if the mountain is full, the bottom flag is swept off */
-      state.spots.splice(i, 0, {domain, tag, price});
+      state.spots.splice(i, 0, entry);
       const gap = state.spots.indexOf(null, i + 1);
       if(gap > -1) state.spots.splice(gap, 1);
       else state.spots.pop();
@@ -1807,9 +1858,26 @@
     $("focusWay").textContent = `${wp.ft} ft · spot #${rank}`;
     $("focusName").textContent = wp.name;
     $("focusFact").textContent = WAYPOINT_INFO[idx];
-    $("focusHolder").textContent = s
-      ? `🚩 Held by ${s.domain} — paid $${s.price}.`
-      : "🏳️ This waypoint is open.";
+    if(s){
+      $("focusHolder").hidden = true;
+      $("focusSponsor").hidden = false;
+      $("fsStats").hidden = false;
+      $("fsLogo").src = faviconUrl(s.domain);
+      const link = $("fsLink"), visit = $("fsVisit");
+      link.textContent = s.domain;
+      link.href = visit.href = "https://" + s.domain;
+      link.onclick = visit.onclick = ()=>trackClick(s.domain);
+      $("fsTag").textContent = s.tag || "";
+      $("fsRank").textContent = "#" + rank + (rank === 1 ? " 👑" : rank === 2 ? " 🥈" : rank === 3 ? " 🥉" : "");
+      $("fsPaid").textContent = "$" + s.price;
+      $("fsClicks").textContent = clicksMap[s.domain] || 0;
+      $("fsWhen").textContent = s.claimed_at ? timeAgo(s.claimed_at) : "—";
+    }else{
+      $("focusHolder").hidden = false;
+      $("focusSponsor").hidden = true;
+      $("fsStats").hidden = true;
+      $("focusHolder").textContent = "🏳️ This waypoint is open.";
+    }
     $("focusClaim").textContent = (s ? "Cut in → $" : "Claim → $") + priceFor(rank);
     $("focusClaim").hidden = false;
     $("focusForm").hidden = true;
