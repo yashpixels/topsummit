@@ -1775,7 +1775,8 @@
     );
     const rc = new THREE.Raycaster();
     rc.setFromCamera(nd, three.camera);
-    const hits = rc.intersectObjects(three.flagGroup ? three.flagGroup.children : [], false);
+    const hits = rc.intersectObjects(three.flagGroup ? three.flagGroup.children : [], false)
+      .filter(h=>h.object.visible);
     if(hits.length) focusSpot(hits[0].object.userData.rank);
   });
 
