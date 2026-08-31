@@ -22,6 +22,7 @@
     --line:rgba(191,227,255,.22);
   }
   *{margin:0;padding:0;box-sizing:border-box}
+  [hidden]{display:none !important}
   html{overflow-x:hidden}
   body{
     font-family:"Archivo",system-ui,sans-serif;
@@ -486,6 +487,17 @@
     background:var(--orange);color:#fff;font-weight:700;font-size:.88rem;
   }
   .focus-hint{margin-top:.45rem;text-align:center;font-size:.64rem;color:var(--ice-dim)}
+  .focus-form{display:grid;gap:.45rem;margin-top:.6rem}
+  .focus-form input{
+    height:40px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(6,12,24,.7);color:var(--cloud);padding:0 .8rem;font-size:.86rem;
+  }
+  .focus-form input::placeholder{color:var(--ice-dim)}
+  #focusPay{
+    height:42px;border-radius:11px;border:none;
+    background:var(--orange);color:#fff;font-weight:700;font-size:.9rem;
+  }
+  .focus-err{color:var(--orange-lit);font-size:.74rem;font-weight:700;min-height:1em;text-align:center}
   .spot-btn-row{display:flex;gap:.6rem;margin-top:.9rem}
   .spot-btn-row .spot-btn{margin-top:0;flex:1}
   .spot-view{
@@ -561,6 +573,12 @@
       <button class="focus-claim" id="focusClaim">Claim → $1</button>
       <button class="orbit-btn" id="orbitR" aria-label="Rotate view right">⟳</button>
     </div>
+    <form class="focus-form" id="focusForm" hidden novalidate>
+      <input id="focusDomain" type="text" inputmode="url" placeholder="yourcompany.com" aria-label="Your company URL" autocomplete="off">
+      <input id="focusTagline" type="text" maxlength="60" placeholder="What you do — one line (optional)" aria-label="One-line description (optional)">
+      <button type="submit" id="focusPay">Pay $1 → plant flag</button>
+      <p class="focus-err" id="focusErr" role="alert"></p>
+    </form>
     <p class="focus-hint">Drag anywhere to look around · hold ⟲/⟳ · it slowly circles on its own.</p>
   </div>
 </div>
@@ -974,11 +992,7 @@
       campsEl.appendChild(sec);
     }
     campsEl.querySelectorAll(".spot-btn").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        setTarget(parseInt(btn.dataset.rank, 10));
-        scrollToEl("#top");
-        setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED?0:900);
-      });
+      btn.addEventListener("click", ()=>openClaim(parseInt(btn.dataset.rank, 10)));
     });
     campsEl.querySelectorAll(".spot-view").forEach(btn=>{
       btn.addEventListener("click", ()=>focusSpot(parseInt(btn.dataset.rank, 10)));
@@ -1111,14 +1125,8 @@
     }catch(e){}
   }
   setInterval(heartbeat, 90000);
-  $("champTake").addEventListener("click", ()=>{
-    setTarget(1); scrollToEl("#top");
-    setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED?0:900);
-  });
-  $("rulesStart").addEventListener("click", ()=>{
-    setTarget(14); scrollToEl("#top");
-    setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED?0:900);
-  });
+  $("champTake").addEventListener("click", ()=>openClaim(1));
+  $("rulesStart").addEventListener("click", ()=>openClaim(14));
 
   /* ---------- claiming / cutting ----------
      DEMO MODE: places the flag immediately.
@@ -1195,11 +1203,7 @@
       else if(sec) sec.scrollIntoView({behavior: REDUCED?"auto":"smooth"});
     }
   });
-  $("stealBtn").addEventListener("click",()=>{
-    setTarget(1);
-    scrollToEl("#top");
-    setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED?0:900);
-  });
+  $("stealBtn").addEventListener("click",()=>openClaim(1));
 
   /* =====================================================
      REAL-TERRAIN 3D (three.js + baked open data, no keys)
@@ -1590,10 +1594,32 @@
       ? `🚩 Held by ${s.domain} — paid $${s.price}.`
       : "🏳️ This waypoint is open.";
     $("focusClaim").textContent = (s ? "Cut in → $" : "Claim → $") + priceFor(rank);
+    $("focusClaim").hidden = false;
+    $("focusForm").hidden = true;
+    $("focusErr").textContent = "";
     $("focusUI").hidden = false;
     lastInteract = Date.now();
     startAuto();
     renderFocusFrame();
+  }
+  function showFocusForm(){
+    if(!focus) return;
+    $("focusClaim").hidden = true;
+    $("focusForm").hidden = false;
+    $("focusPay").disabled = false;
+    $("focusPay").textContent = "Pay $" + priceFor(focus.rank) + " → plant flag";
+    setTimeout(()=>$("focusDomain").focus({preventScroll:true}), 60);
+  }
+  /* one entry point for every claim button on the page */
+  function openClaim(rank){
+    if(three && terrainOn){
+      focusSpot(rank);
+      showFocusForm();
+    }else{
+      setTarget(rank);
+      scrollToEl("#top");
+      setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED ? 0 : 900);
+    }
   }
   /* gentle idle auto-orbit: circles the spot after a few quiet seconds */
   function startAuto(){
@@ -1673,12 +1699,44 @@
     else if(e.key === "ArrowRight"){ focus.az -= 0.09; lastInteract = Date.now(); renderFocusFrame(); e.preventDefault(); }
     else if(e.key === "Escape"){ closeFocus(); }
   });
-  $("focusClaim").addEventListener("click", ()=>{
-    const r = focus ? focus.rank : 1;
+  $("focusClaim").addEventListener("click", showFocusForm);
+  $("focusForm").addEventListener("submit", async e=>{
+    e.preventDefault();
+    if(!focus) return;
+    const rank = focus.rank;
+    const errEl = $("focusErr");
+    errEl.textContent = "";
+    const d = $("focusDomain").value.trim().toLowerCase()
+      .replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/\/.*$/,"");
+    if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d)){
+      errEl.textContent = "That doesn't look like a URL — try yourcompany.com";
+      $("focusDomain").focus();
+      return;
+    }
+    const tagline = $("focusTagline").value.trim().slice(0, 60);
+    if(LIVE){
+      const payBtn = $("focusPay");
+      payBtn.disabled = true;
+      payBtn.textContent = "Opening checkout…";
+      try{
+        const res = await fetch(BACKEND.url + "/functions/v1/create-checkout", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ rank, domain: d, category: "", tagline })
+        });
+        const out = await res.json().catch(()=> ({}));
+        if(!res.ok || !out.checkout_url) throw new Error(out.error || "Checkout failed — try again.");
+        location.href = out.checkout_url;
+      }catch(err){
+        errEl.textContent = err.message || "Could not start checkout.";
+        payBtn.disabled = false;
+        payBtn.textContent = "Pay $" + priceFor(rank) + " → plant flag";
+      }
+      return;
+    }
+    /* demo mode */
+    placeFlag(rank, d, tagline || "flag planted just now", priceFor(rank));
+    render(); renderFlags3D(); initScrollFX();
     closeFocus();
-    setTarget(r);
-    scrollToEl("#top");
-    setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED ? 0 : 900);
   });
   $("summitView").addEventListener("click", ()=>focusSpot(1));
   /* clicking a flag in the 3D scene locks onto it */
@@ -1814,7 +1872,15 @@
        reaches the summit at the finale — not at the footer. */
     ScrollTrigger.create({
       trigger: document.body, start:"top top", end:"max", scrub:0.5,
-      onUpdate(self){ applyProgress(scrollToT(self.scroll())); },
+      onUpdate(self){
+        const sy = self.scroll();
+        applyProgress(scrollToT(sy));
+        /* deterministic hero fade — no tween state that can get stuck */
+        const hero = document.querySelector(".hero");
+        const f = Math.max(0, 1 - sy / (innerHeight * 0.65));
+        hero.style.opacity = f;
+        hero.style.pointerEvents = f < 0.05 ? "none" : "";
+      },
       invalidateOnRefresh:true
     });
 
@@ -1822,12 +1888,7 @@
       gsap.from(el, {y:50, opacity:0, duration:1.2, ease:"power3.out",
         scrollTrigger:{trigger:el, start:"top 82%"}});
     });
-    /* explicit fromTo + immediateRender:false so re-initialising after a claim
-       can never capture the hero mid-entrance and freeze it invisible */
-    gsap.fromTo(".hero > *:not(.scroll-cue)",
-      { opacity:1, y:0 },
-      { opacity:0, y:-60, ease:"none", stagger:0.012, immediateRender:false,
-        scrollTrigger:{ trigger:".hero", start:"top top", end:"70% top", scrub:0.6 } });
+    /* (hero fade is handled deterministically in the master trigger above) */
 
     gsap.utils.toArray(".camp").forEach((sec,i)=>{
       const card = sec.querySelector(".flag-card");
