@@ -127,7 +127,8 @@
   h1{
     font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
     font-size:clamp(2.5rem,7vw,5rem);line-height:1.0;letter-spacing:-.025em;
-    text-wrap:balance;text-shadow:0 4px 40px rgba(4,8,16,.8);
+    text-wrap:balance;
+    text-shadow:0 2px 8px rgba(4,8,16,.9), 0 4px 40px rgba(4,8,16,.85);
   }
   h1 em{font-style:normal;color:var(--orange)}
   h1 .mono{color:var(--orange-lit);border-bottom:3px dashed rgba(255,90,31,.55);font-size:.8em}
@@ -197,7 +198,12 @@
 
   /* ---------- THE CLIMB ---------- */
   .climb{position:relative;z-index:5}
-  .climb-intro{text-align:center;padding:8svh 1.2rem 6svh;max-width:660px;margin:0 auto}
+  .climb-intro{
+    text-align:center;padding:2.2rem 1.8rem;width:min(660px,92vw);
+    margin:10svh auto 5svh;
+    background:rgba(6,12,24,.55);backdrop-filter:blur(8px);
+    border:1px solid rgba(191,227,255,.12);border-radius:24px;
+  }
   .climb-intro h2{
     font-family:"Bricolage Grotesque",sans-serif;font-weight:700;
     font-size:clamp(1.5rem,3.4vw,2.3rem);letter-spacing:-.01em;
@@ -304,8 +310,9 @@
   /* ---------- footer ---------- */
   .basefooter{
     position:relative;z-index:5;text-align:center;
-    padding:8svh 1.2rem 11svh;color:var(--ice-dim);font-size:.84rem;line-height:1.8;
-    background:linear-gradient(180deg,transparent,rgba(4,8,16,.85) 60%);
+    padding:8svh 1.2rem 11svh;color:#A9C0D8;font-size:.84rem;line-height:1.8;
+    background:linear-gradient(180deg,transparent 0%,rgba(4,8,16,.82) 16%,rgba(4,8,16,.97) 45%);
+    text-shadow:0 1px 6px rgba(4,8,16,.9);
   }
   .basefooter .sign{
     display:inline-block;border:1px solid var(--line);color:var(--ice-dim);
@@ -404,6 +411,7 @@
       <option>E-commerce</option><option>Fintech</option><option>Health</option>
       <option>Media</option><option>Something else entirely</option>
     </select>
+    <input id="taglineInput" type="text" maxlength="60" placeholder="What you do — one line (optional)" aria-label="One-line description (optional)">
     <button class="go" type="submit" id="claimBtn">Claim the summit → $14</button>
   </form>
   <p class="target-line" data-load="8">Targeting: <b id="targetName">The Summit · 29,032 ft</b></p>
@@ -672,6 +680,7 @@
       return;
     }
     const cat = $("categorySelect").value || "Unclassified expedition";
+    const tagline = $("taglineInput").value.trim().slice(0, 60);
 
     if(LIVE){
       /* real flow: server prices the spot and opens a Dodo Payments checkout;
@@ -683,7 +692,7 @@
         const res = await fetch(BACKEND.url + "/functions/v1/create-checkout", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ rank: targetRank, domain: d, category: cat })
+          body: JSON.stringify({ rank: targetRank, domain: d, category: cat, tagline })
         });
         const out = await res.json().catch(()=> ({}));
         if(!res.ok || !out.checkout_url) throw new Error(out.error || "Checkout failed — try again.");
@@ -698,7 +707,7 @@
     }
 
     /* demo mode (backend unreachable): place instantly, local-only */
-    placeFlag(targetRank, d, cat + " · flag planted just now", priceFor(targetRank));
+    placeFlag(targetRank, d, tagline || (cat + " · flag planted just now"), priceFor(targetRank));
     const landedRank = targetRank;
     render();
     renderFlags3D();
@@ -857,26 +866,78 @@
       img.src = src;
     });
   }
+  function truncateText(c, text, maxW){
+    if(c.measureText(text).width <= maxW) return text;
+    while(text.length > 1 && c.measureText(text + "…").width > maxW) text = text.slice(0, -1);
+    return text + "…";
+  }
+  function roundRect(c, x, y, w, h, r){
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
   function flagSprite(spot, rank){
     const cvs = document.createElement("canvas");
-    cvs.width = 256; cvs.height = 128;
+    cvs.width = 512; cvs.height = 256;
     const c = cvs.getContext("2d");
-    c.fillStyle = "#F4F9FF"; c.fillRect(20, 8, 6, 112);
-    if(spot){
-      c.fillStyle = rank === 1 ? "#FF5A1F" : `hsl(${hueFor(spot.domain)} 70% 52%)`;
-      c.beginPath(); c.moveTo(26, 10); c.lineTo(236, 32); c.lineTo(26, 62); c.fill();
-      c.fillStyle = "#fff";
-      c.font = "800 30px Bricolage Grotesque, Arial";
-      c.fillText("#" + rank, 40, 46);
-    }else{
-      c.strokeStyle = "rgba(191,227,255,.8)"; c.lineWidth = 4; c.setLineDash([10, 8]);
-      c.beginPath(); c.moveTo(26, 10); c.lineTo(236, 32); c.lineTo(26, 62); c.closePath(); c.stroke();
-      c.fillStyle = "rgba(244,249,255,.9)";
-      c.font = "800 26px Bricolage Grotesque, Arial";
-      c.fillText("$" + priceFor(rank), 44, 46);
+    function draw(logo){
+      c.clearRect(0, 0, 512, 256);
+      c.fillStyle = "#F4F9FF"; c.fillRect(16, 8, 8, 240);   /* pole */
+      if(spot){
+        const accent = rank === 1 ? "#FF5A1F" : `hsl(${hueFor(spot.domain)} 70% 55%)`;
+        roundRect(c, 34, 22, 452, 172, 18);
+        c.fillStyle = "rgba(8,15,29,.95)"; c.fill();
+        c.lineWidth = 5; c.strokeStyle = accent; c.stroke();
+        /* logo (favicon) in a circle, monogram fallback */
+        c.save();
+        c.beginPath(); c.arc(94, 86, 36, 0, 7); c.clip();
+        if(logo){
+          c.fillStyle = "#fff"; c.fillRect(58, 50, 72, 72);
+          c.drawImage(logo, 62, 54, 64, 64);
+        }else{
+          c.fillStyle = accent; c.fillRect(58, 50, 72, 72);
+          c.fillStyle = "#fff"; c.font = "800 42px Bricolage Grotesque, Arial";
+          c.textAlign = "center";
+          c.fillText(spot.domain[0].toUpperCase(), 94, 101);
+          c.textAlign = "left";
+        }
+        c.restore();
+        c.fillStyle = "#F4F9FF"; c.font = "800 33px Bricolage Grotesque, Arial";
+        c.fillText(truncateText(c, spot.domain, 320), 150, 80);
+        c.fillStyle = "#BFE3FF"; c.font = "400 21px Archivo, Arial";
+        c.fillText(truncateText(c, spot.tag || "", 320), 150, 114);
+        c.fillStyle = accent; c.font = "700 26px IBM Plex Mono, monospace";
+        c.fillText(`#${rank} · $${spot.price}`, 150, 168);
+      }else{
+        /* open spot: orange dashed pennant so it reads against snow */
+        c.strokeStyle = "#FF5A1F"; c.lineWidth = 7; c.setLineDash([16, 11]);
+        c.beginPath(); c.moveTo(30, 26); c.lineTo(468, 86); c.lineTo(30, 150);
+        c.closePath(); c.stroke();
+        c.setLineDash([]);
+        c.fillStyle = "rgba(8,15,29,.55)";
+        c.beginPath(); c.moveTo(30, 26); c.lineTo(468, 86); c.lineTo(30, 150);
+        c.closePath(); c.fill();
+        c.fillStyle = "#FF8A5C"; c.font = "800 46px Bricolage Grotesque, Arial";
+        c.fillText("$" + priceFor(rank), 76, 88);
+        c.font = "700 22px IBM Plex Mono, monospace";
+        c.fillText("OPEN", 76, 124);
+      }
     }
-    const t = new THREE.CanvasTexture(cvs);
-    return new THREE.Sprite(new THREE.SpriteMaterial({map:t, depthTest:true, transparent:true}));
+    draw(null);
+    const tex = new THREE.CanvasTexture(cvs);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:true, transparent:true}));
+    if(spot){
+      /* fetch the company favicon; keep the monogram if it can't load */
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = ()=>{ try{ draw(img); tex.needsUpdate = true; if(terrainOn) renderTerrain(); }catch(e){} };
+      img.src = "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(spot.domain) + "&sz=64";
+    }
+    return sp;
   }
   function renderFlags3D(){
     if(!three) return;
@@ -888,7 +949,7 @@
       const l = toLocal(w.lon, w.lat);
       const y = Math.max(w.alt, three.heightAt(w.lon, w.lat)) + (r === 1 ? 220 : 150);
       const sp = flagSprite(spot, r);
-      const s = r === 1 ? 900 : 620;
+      const s = r === 1 ? 1050 : 760;
       sp.scale.set(s, s/2, 1);
       sp.position.set(l.x, y, l.z);
       g.add(sp);
