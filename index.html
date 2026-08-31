@@ -1215,6 +1215,16 @@
         return new THREE.Vector3(l.x, Math.max(w.alt, heightAt(w.lon, w.lat)) + 60, l.z);
       });
       const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal", 0.4);
+      /* arc-length fraction of each waypoint along the curve — the valley trek is
+         ~5x longer than the summit push, so equal scroll steps must NOT mean equal
+         arc steps. Cards map to these fractions so the camera sits at the exact
+         flag being looked at. */
+      const arcLens = curve.getLengths(2000);
+      const arcTotal = arcLens[arcLens.length - 1];
+      const wpU = ROUTE.map((_, i)=>{
+        const idx = Math.round((i / (ROUTE.length - 1)) * 2000);
+        return arcLens[idx] / arcTotal;
+      });
       const lineGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(360).map(v=>v.clone().setY(v.y + 25)));
       const line = new THREE.Line(lineGeo, new THREE.LineDashedMaterial({
         color:0xff5a1f, dashSize:280, gapSize:180, transparent:true, opacity:0.9
@@ -1222,7 +1232,7 @@
       line.computeLineDistances();
       scene.add(line);
 
-      three = { renderer, scene, camera, curve, heightAt, flagGroup:null };
+      three = { renderer, scene, camera, curve, heightAt, wpU, lastAltM:0, flagGroup:null };
       renderFlags3D();
 
       addEventListener("resize", ()=>{
@@ -1348,12 +1358,22 @@
     three.scene.add(g);
     if(terrainOn) renderTerrain();
   }
-  function cameraAt(t){
+  /* card progress r (0..1, linear across the 14 spots) -> arc fraction u */
+  function routeU(r){
+    if(!three || !three.wpU) return r;
+    const n = SPOTS - 1;
+    const f = Math.min(Math.max(r, 0), 1) * n;
+    const i = Math.min(Math.floor(f), n - 1);
+    return three.wpU[i] + (three.wpU[i + 1] - three.wpU[i]) * (f - i);
+  }
+  function cameraAt(r){
     if(!three) return;
     const { camera, curve, heightAt } = three;
+    const t = routeU(r);
     const target = curve.getPointAt(Math.min(t, 1));
-    const ahead = curve.getPointAt(Math.min(t + 0.035, 1));
+    const ahead = curve.getPointAt(Math.min(t + 0.02, 1));
     const tangent = curve.getTangentAt(Math.min(t, 0.995)).setY(0).normalize();
+    three.lastAltM = target.y;
     /* pull in tight on the upper mountain: 5.4 km back -> 1.5 km, 1.6 km up -> 450 m */
     const back = 5400 - t * 3900;
     const up = 1600 - t * 1150;
@@ -1447,13 +1467,21 @@
   /* ---------- shared progress ---------- */
   function applyProgress(t){
     lastT = t;
-    const ft = Math.round(FT_MIN + t * (FT_MAX - FT_MIN));
-    $("altimeter").textContent = ft.toLocaleString("en-US") + " ft";
     const rail = document.querySelector(".ladder-rail");
     $("ladder").style.transform = `translateY(${-(rail.clientHeight - 64) * t}px)`;
-    skyAt(t);
-    if(terrainOn) renderTerrain();
-    else stylizedAt(t);
+    if(terrainOn){
+      renderTerrain();
+      /* altimeter and sky follow the camera's REAL altitude, so they stay in
+         sync with the terrain no matter how the route is paced */
+      const altM = (three && three.lastAltM) || (2860 + t * 5989);
+      $("altimeter").textContent = Math.round(altM * 3.28084).toLocaleString("en-US") + " ft";
+      skyAt(Math.min(Math.max((altM - 2860) / 5989, 0), 1));
+    }else{
+      const ft = Math.round(FT_MIN + t * (FT_MAX - FT_MIN));
+      $("altimeter").textContent = ft.toLocaleString("en-US") + " ft";
+      skyAt(t);
+      stylizedAt(t);
+    }
   }
 
   /* ---------- lenis + gsap ---------- */
