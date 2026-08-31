@@ -1427,7 +1427,7 @@
       const lon2t = (lon, z) => Math.floor((lon + 180) / 360 * Math.pow(2, z));
       const lat2t = (lat, z) => Math.floor((1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
 
-      function buildPatchMesh(pLonMin, pLonMax, pLatMin, pLatMax, seg, texture){
+      function buildPatchMesh(pLonMin, pLonMax, pLatMin, pLatMax, seg, texture, ro){
         const pg = new THREE.BufferGeometry();
         const n = (seg + 1) * (seg + 1);
         const pp = new Float32Array(n * 3), pu = new Float32Array(n * 2);
@@ -1450,11 +1450,14 @@
         pg.setAttribute("uv", new THREE.BufferAttribute(pu, 2));
         pg.setIndex(pidx);
         pg.computeVertexNormals();
+        /* depthWrite off + explicit renderOrder: patches composite over the base
+           deterministically instead of fighting each other in the depth buffer */
         const pm = new THREE.MeshStandardMaterial({
-          map: texture, roughness: 1, metalness: 0, transparent: true,
+          map: texture, roughness: 1, metalness: 0, transparent: true, depthWrite: false,
           polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4
         });
         const mesh = new THREE.Mesh(pg, pm);
+        mesh.renderOrder = ro || 1;
         scene.add(mesh);
         return mesh;
       }
@@ -1481,7 +1484,7 @@
         c.restore();
       }
 
-      function streamPatch(z, x0, x1, y0, y1, seg){
+      function streamPatch(z, x0, x1, y0, y1, seg, ro){
         const w = (x1 - x0 + 1) * 256, h = (y1 - y0 + 1) * 256;
         const maxTex = renderer.capabilities.maxTextureSize || 8192;
         const scale = Math.min(1, maxTex / Math.max(w, h));
@@ -1501,7 +1504,7 @@
         const ptex = new THREE.CanvasTexture(cvs);
         ptex.colorSpace = THREE.SRGBColorSpace;
         ptex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        const mesh = buildPatchMesh(pLonMin, pLonMax, pLatMin, pLatMax, seg, ptex);
+        const mesh = buildPatchMesh(pLonMin, pLonMax, pLatMin, pLatMax, seg, ptex, ro);
         refreshView();
         /* stream tiles with a small pool; sharpen progressively */
         const jobs = [];
@@ -1537,7 +1540,7 @@
       }
 
       /* corridor: Base Camp -> Summit at z16 (~1.2 m/px) */
-      streamPatch(16, lon2t(86.840, 16), lon2t(86.940, 16), lat2t(28.016, 16), lat2t(27.952, 16), 220);
+      streamPatch(16, lon2t(86.840, 16), lon2t(86.940, 16), lat2t(28.016, 16), lat2t(27.952, 16), 220, 1);
 
       /* the trek waypoints below Base Camp (spots 8-14) sit outside the corridor —
          give each its own z16 patch (~5 km square), staggered so the network
@@ -1545,7 +1548,7 @@
       for(let r = 8; r <= SPOTS; r++){
         const wp = ROUTE[SPOTS - r];
         const cx = lon2t(wp.lon, 16), cy = lat2t(wp.lat, 16);
-        setTimeout(()=>streamPatch(16, cx - 4, cx + 3, cy - 4, cy + 3, 128), (r - 8) * 3000);
+        setTimeout(()=>streamPatch(16, cx - 4, cx + 3, cy - 4, cy + 3, 128, 1), (r - 8) * 3000);
       }
 
       /* ultra-res patch (z17, ~0.6 m/px) around a focused waypoint, small LRU */
@@ -1554,7 +1557,7 @@
         if(spotPatches.some(p=>p.rank === rank)) return;
         const wp = ROUTE[SPOTS - rank];
         const cz = 17, cx = lon2t(wp.lon, cz), cy = lat2t(wp.lat, cz);
-        const mesh = streamPatch(cz, cx - 3, cx + 3, cy - 3, cy + 3, 128);
+        const mesh = streamPatch(cz, cx - 3, cx + 3, cy - 3, cy + 3, 128, 2);
         spotPatches.push({ rank, mesh });
         if(spotPatches.length > 5){
           const old = spotPatches.shift();
@@ -1652,7 +1655,10 @@
     }
     draw(null);
     const tex = new THREE.CanvasTexture(cvs);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:true, transparent:true}));
+    /* depthWrite off so the sprite's transparent pixels never punch holes in
+       the imagery patches rendered around it */
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:true, depthWrite:false, transparent:true}));
+    sp.renderOrder = 10;
     if(spot){
       /* fetch the company favicon via CORS-friendly sources (Google's favicon
          endpoint blocks cross-origin canvas use); monogram stays as fallback */
