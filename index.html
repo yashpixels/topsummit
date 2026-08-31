@@ -931,11 +931,20 @@
     const tex = new THREE.CanvasTexture(cvs);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:true, transparent:true}));
     if(spot){
-      /* fetch the company favicon; keep the monogram if it can't load */
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = ()=>{ try{ draw(img); tex.needsUpdate = true; if(terrainOn) renderTerrain(); }catch(e){} };
-      img.src = "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(spot.domain) + "&sz=64";
+      /* fetch the company favicon via CORS-friendly sources (Google's favicon
+         endpoint blocks cross-origin canvas use); monogram stays as fallback */
+      const sources = [
+        "https://images.weserv.nl/?url=" + encodeURIComponent("www.google.com/s2/favicons?domain=" + spot.domain + "&sz=64"),
+        "https://unavatar.io/" + encodeURIComponent(spot.domain)
+      ];
+      (function tryNext(i){
+        if(i >= sources.length) return;
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = ()=>{ try{ draw(img); tex.needsUpdate = true; if(terrainOn) renderTerrain(); }catch(e){} };
+        img.onerror = ()=>tryNext(i + 1);
+        img.src = sources[i];
+      })(0);
     }
     return sp;
   }
