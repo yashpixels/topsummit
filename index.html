@@ -1464,6 +1464,14 @@
 
       function refreshView(){ if(typeof focus !== "undefined" && focus) renderFocusFrame(); else renderTerrain(); }
 
+      /* the Esri credit must appear exactly once, no matter how many patches load */
+      let esriCredited = false;
+      function creditEsri(){
+        if(esriCredited) return;
+        esriCredited = true;
+        $("attribution").textContent += " High-resolution imagery © Esri — Maxar, Earthstar Geographics, and the GIS User Community.";
+      }
+
       /* fade each patch's borders to transparent so it blends into the base
          imagery instead of ending in a hard, differently-graded rectangle */
       function featherEdges(c, w, h){
@@ -1509,7 +1517,7 @@
         /* stream tiles with a small pool; sharpen progressively */
         const jobs = [];
         for(let x = x0; x <= x1; x++) for(let y = y0; y <= y1; y++) jobs.push({x, y});
-        let idx = 0, done = 0, credited = false;
+        let idx = 0, done = 0;
         function pump(){
           if(idx >= jobs.length) return;
           const j = jobs[idx++];
@@ -1518,10 +1526,7 @@
           const fin = ok=>{
             if(ok){
               c.drawImage(img, (j.x - x0) * 256 * scale, (j.y - y0) * 256 * scale, 256 * scale, 256 * scale);
-              if(!credited){
-                credited = true;
-                $("attribution").textContent += " High-resolution imagery © Esri — Maxar, Earthstar Geographics, and the GIS User Community.";
-              }
+              creditEsri();
             }
             done++;
             if(done % 24 === 0 || done === jobs.length){
