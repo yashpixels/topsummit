@@ -215,6 +215,9 @@
     position:relative;min-height:82svh;
     display:flex;align-items:center;padding:7svh 1rem;
   }
+  /* the upper mountain (spots 6 -> 2) gets more scroll room, so the flight
+     up high is slower and each spot hangs on screen longer */
+  .camp:nth-child(n+9){min-height:130svh}
   .camp:nth-child(odd) .camp-inner{margin-left:auto;margin-right:max(4vw,calc(50vw - 620px))}
   .camp:nth-child(even) .camp-inner{margin-right:auto;margin-left:max(4vw,calc(50vw - 620px))}
   .camp-inner{width:min(520px,94vw);position:relative}
@@ -1351,18 +1354,33 @@
     const target = curve.getPointAt(Math.min(t, 1));
     const ahead = curve.getPointAt(Math.min(t + 0.035, 1));
     const tangent = curve.getTangentAt(Math.min(t, 0.995)).setY(0).normalize();
-    const back = 5600 - t * 3400;
-    const up = 1600 - t * 850;
-    const swing = Math.sin(t * Math.PI * 1.35) * 0.9 + orbitExtra;
+    /* pull in tight on the upper mountain: 5.4 km back -> 1.5 km, 1.6 km up -> 450 m */
+    const back = 5400 - t * 3900;
+    const up = 1600 - t * 1150;
+    /* gentle swing keeps the camera in the valley rather than behind side ridges */
+    const swing = Math.sin(t * Math.PI * 1.35) * 0.5 + orbitExtra;
     const off = tangent.clone().multiplyScalar(-back);
     const cosS = Math.cos(swing), sinS = Math.sin(swing);
     const ox = off.x * cosS - off.z * sinS;
     const oz = off.x * sinS + off.z * cosS;
     const cam = new THREE.Vector3(target.x + ox, target.y + up, target.z + oz);
     const camLon = LON0 + cam.x / MPERLON, camLat = LAT0 - cam.z / MPERLAT;
-    cam.y = Math.max(cam.y, heightAt(camLon, camLat) + 420);
+    cam.y = Math.max(cam.y, heightAt(camLon, camLat) + 380);
+    /* line-of-sight: lift the camera until no intervening ridge blocks the target */
+    const tgtY = ahead.y + 120;
+    for(let k = 1; k <= 6; k++){
+      const f = k / 7;
+      if(f > 0.85) break;
+      const sx = cam.x + (ahead.x - cam.x) * f;
+      const sz = cam.z + (ahead.z - cam.z) * f;
+      const ridge = heightAt(LON0 + sx / MPERLON, LAT0 - sz / MPERLAT) + 150;
+      const lineY = cam.y * (1 - f) + tgtY * f;
+      if(lineY < ridge){
+        cam.y = Math.max(cam.y, (ridge - tgtY * f) / (1 - f));
+      }
+    }
     camera.position.copy(cam);
-    camera.lookAt(ahead.x, ahead.y + 120, ahead.z);
+    camera.lookAt(ahead.x, tgtY, ahead.z);
     const fogC = mixColor([157,185,216], [26,36,58], t);
     three.scene.fog.color.setRGB(fogC[0]/255, fogC[1]/255, fogC[2]/255);
     three.scene.fog.near = 14000 - t * 6000;
@@ -1392,11 +1410,47 @@
     plume.style.transform = `scaleX(${0.7 + t*0.5})`;
   }
 
+  /* ---------- scroll -> route mapping ---------- */
+  let scrollMap = null;
+  function buildScrollMap(){
+    const vh = innerHeight;
+    const pts = [{ y: 0, t: 0 }];
+    document.querySelectorAll(".camp").forEach((sec, i)=>{
+      /* first camp section is rank 14 = Lukla = route index 0 ... rank 2 = index 12;
+         the finale (summit) is index 13. The camera holds Lukla until the first
+         camp card is centred, then climbs waypoint by waypoint with the cards. */
+      const yTop = sec.getBoundingClientRect().top + window.scrollY;
+      pts.push({ y: yTop + sec.offsetHeight / 2 - vh * 0.55,
+                 t: Math.min(i / (SPOTS - 1), 1) });
+    });
+    const fin = document.querySelector(".finale");
+    pts.push({ y: fin.getBoundingClientRect().top + window.scrollY, t: 1 });
+    for(let i = 1; i < pts.length; i++){
+      if(pts[i].y <= pts[i-1].y) pts[i].y = pts[i-1].y + 1;
+      if(pts[i].t < pts[i-1].t) pts[i].t = pts[i-1].t;
+    }
+    scrollMap = pts;
+  }
+  function scrollToT(y){
+    if(!scrollMap) return 0;
+    const p = scrollMap;
+    if(y <= p[0].y) return 0;
+    for(let i = 1; i < p.length; i++){
+      if(y < p[i].y){
+        const u = (y - p[i-1].y) / (p[i].y - p[i-1].y);
+        return p[i-1].t + (p[i].t - p[i-1].t) * u;
+      }
+    }
+    return 1;   /* past the finale (board, rules, footer) the camera holds the summit */
+  }
+
   /* ---------- shared progress ---------- */
   function applyProgress(t){
     lastT = t;
     const ft = Math.round(FT_MIN + t * (FT_MAX - FT_MIN));
     $("altimeter").textContent = ft.toLocaleString("en-US") + " ft";
+    const rail = document.querySelector(".ladder-rail");
+    $("ladder").style.transform = `translateY(${-(rail.clientHeight - 64) * t}px)`;
     skyAt(t);
     if(terrainOn) renderTerrain();
     else stylizedAt(t);
@@ -1444,15 +1498,13 @@
     ScrollTrigger.getAll().forEach(t=>t.kill());
     if(REDUCED){ applyProgress(1); return; }
 
+    /* Map scroll -> route progress via the camp sections themselves, so the
+       camera is exactly at a waypoint while its card is centred on screen, and
+       reaches the summit at the finale — not at the footer. */
     ScrollTrigger.create({
       trigger: document.body, start:"top top", end:"max", scrub:0.5,
-      onUpdate(self){ applyProgress(self.progress); },
+      onUpdate(self){ applyProgress(scrollToT(self.scroll())); },
       invalidateOnRefresh:true
-    });
-    const rail = document.querySelector(".ladder-rail");
-    gsap.to("#ladder", {
-      y: () => -(rail.clientHeight - 64), ease:"none",
-      scrollTrigger:{ trigger:document.body, start:"top top", end:"max", scrub:0.4, invalidateOnRefresh:true }
     });
 
     gsap.utils.toArray("[data-reveal]").forEach(el=>{
@@ -1481,7 +1533,9 @@
     .fromTo(".finale .kicker, .finale .steal", {opacity:0}, {opacity:1, ease:"sine.out"}, 0.15);
 
     ScrollTrigger.refresh();
+    buildScrollMap();
   }
+  addEventListener("resize", ()=>{ if(scrollMap) buildScrollMap(); });
 
   /* ---------- snow ---------- */
   const canvas = $("snow"), ctx = canvas.getContext("2d");
@@ -1547,8 +1601,10 @@
     }
   });
 
-  /* debug/tuning hook: preview the camera at any progress 0..1 from the console */
+  /* debug/tuning hooks: preview the camera at any progress 0..1 from the console */
   window.__setProgress = applyProgress;
+  window.__scrollMap = () => scrollMap;
+  window.__scrollToT = scrollToT;
 
   /* ---------- go ---------- */
   render();
