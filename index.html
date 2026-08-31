@@ -582,7 +582,9 @@
     <p class="focus-holder" id="focusHolder"></p>
     <div class="focus-row">
       <button class="orbit-btn" id="orbitL" aria-label="Rotate view left">⟲</button>
+      <button class="orbit-btn" id="zoomOut" aria-label="Zoom out">−</button>
       <button class="focus-claim" id="focusClaim">Claim → $1</button>
+      <button class="orbit-btn" id="zoomIn" aria-label="Zoom in">+</button>
       <button class="orbit-btn" id="orbitR" aria-label="Rotate view right">⟳</button>
     </div>
     <form class="focus-form" id="focusForm" hidden novalidate>
@@ -591,7 +593,7 @@
       <button type="submit" id="focusPay">Pay $1 → plant flag</button>
       <p class="focus-err" id="focusErr" role="alert"></p>
     </form>
-    <p class="focus-hint">Drag anywhere to look around · hold ⟲/⟳ · it slowly circles on its own.</p>
+    <p class="focus-hint">Drag any direction to look around · scroll or pinch to zoom · it slowly circles on its own.</p>
   </div>
 </div>
 
@@ -1605,7 +1607,7 @@
     const idx = SPOTS - rank;
     const wp = ROUTE[idx];
     const s = state.spots[rank - 1];
-    focus = { rank, az: Math.PI * 0.3 };
+    focus = { rank, az: Math.PI * 0.3, el: 0.32, dist: 1500 };
     $("focusWay").textContent = `${wp.ft} ft · spot #${rank}`;
     $("focusName").textContent = wp.name;
     $("focusFact").textContent = WAYPOINT_INFO[idx];
@@ -1658,6 +1660,10 @@
   function closeFocus(){
     stopOrbit();
     stopAuto();
+    stopZoom();
+    pinchPts.clear();
+    lastPinchDist = null;
+    dragY = null;
     dragX = null;
     focus = null;
     $("focusUI").hidden = true;
@@ -1672,11 +1678,12 @@
     const l = toLocal(wp.lon, wp.lat);
     const groundY = Math.max(wp.alt, three.heightAt(wp.lon, wp.lat));
     const center = new THREE.Vector3(l.x, groundY + 130, l.z);
-    const dist = 1500, up = 480;
+    /* full spherical orbit: azimuth + elevation + zoomable distance */
+    const d = focus.dist, cosE = Math.cos(focus.el);
     const cam = new THREE.Vector3(
-      center.x + Math.sin(focus.az) * dist,
-      groundY + up,
-      center.z + Math.cos(focus.az) * dist
+      center.x + Math.sin(focus.az) * cosE * d,
+      groundY + 130 + Math.sin(focus.el) * d,
+      center.z + Math.cos(focus.az) * cosE * d
     );
     const camLon = LON0 + cam.x / MPERLON, camLat = LAT0 - cam.z / MPERLAT;
     cam.y = Math.max(cam.y, three.heightAt(camLon, camLat) + 240);
@@ -1697,22 +1704,68 @@
     }, 30);
   }
   function stopOrbit(){ if(orbitTimer){ clearInterval(orbitTimer); orbitTimer = null; } }
-  /* drag anywhere on the scene to look around while focused */
+  /* drag in ANY direction to look around; pinch or scroll to zoom */
+  const clampEl = v => Math.min(Math.max(v, 0.06), 1.42);
+  const clampDist = v => Math.min(Math.max(v, 420), 9000);
+  let dragY = null, pinchPts = new Map(), lastPinchDist = null;
   document.addEventListener("pointerdown", e=>{
     if(!focus) return;
     if(e.target.closest(".focus-panel,a,button,input,select,.hud,.panel,.flag-card")) return;
-    dragX = e.clientX;
+    pinchPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if(pinchPts.size === 1){ dragX = e.clientX; dragY = e.clientY; }
+    else { dragX = null; dragY = null; }
     lastInteract = Date.now();
   });
   document.addEventListener("pointermove", e=>{
-    if(!focus || dragX === null) return;
-    focus.az += (e.clientX - dragX) * 0.006;
-    dragX = e.clientX;
+    if(!focus || !pinchPts.has(e.pointerId)) return;
+    pinchPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if(pinchPts.size >= 2){
+      const [a, b] = [...pinchPts.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      if(lastPinchDist !== null && dist > 0){
+        focus.dist = clampDist(focus.dist * (lastPinchDist / dist));
+      }
+      lastPinchDist = dist;
+    }else if(dragX !== null){
+      focus.az += (e.clientX - dragX) * 0.006;
+      focus.el = clampEl(focus.el + (e.clientY - dragY) * 0.004);
+      dragX = e.clientX; dragY = e.clientY;
+    }
     lastInteract = Date.now();
     renderFocusFrame();
   });
   ["pointerup", "pointercancel"].forEach(ev=>
-    document.addEventListener(ev, ()=>{ dragX = null; }));
+    document.addEventListener(ev, e=>{
+      pinchPts.delete(e.pointerId);
+      lastPinchDist = null;
+      if(pinchPts.size === 0){ dragX = null; dragY = null; }
+    }));
+  document.addEventListener("wheel", e=>{
+    if(!focus) return;
+    e.preventDefault();
+    focus.dist = clampDist(focus.dist * (1 + e.deltaY * 0.0013));
+    lastInteract = Date.now();
+    renderFocusFrame();
+  }, { passive: false });
+  /* hold-to-zoom buttons */
+  let zoomTimer = null;
+  function startZoom(dir){
+    stopZoom();
+    lastInteract = Date.now();
+    zoomTimer = setInterval(()=>{
+      if(focus){
+        focus.dist = clampDist(focus.dist * (1 - dir * 0.03));
+        lastInteract = Date.now();
+        renderFocusFrame();
+      }
+    }, 30);
+  }
+  function stopZoom(){ if(zoomTimer){ clearInterval(zoomTimer); zoomTimer = null; } }
+  [["zoomIn", 1], ["zoomOut", -1]].forEach(([id, dir])=>{
+    const b = $(id);
+    b.addEventListener("pointerdown", e=>{ e.preventDefault(); startZoom(dir); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev=>b.addEventListener(ev, stopZoom));
+  });
   $("focusClose").addEventListener("click", closeFocus);
   [["orbitL", 1], ["orbitR", -1]].forEach(([id, dir])=>{
     const b = $(id);
@@ -1721,8 +1774,16 @@
   });
   document.addEventListener("keydown", e=>{
     if(!focus) return;
+    if(e.target && e.target.closest && e.target.closest("input,select,textarea")){
+      if(e.key === "Escape") closeFocus();
+      return;
+    }
     if(e.key === "ArrowLeft"){ focus.az += 0.09; lastInteract = Date.now(); renderFocusFrame(); e.preventDefault(); }
     else if(e.key === "ArrowRight"){ focus.az -= 0.09; lastInteract = Date.now(); renderFocusFrame(); e.preventDefault(); }
+    else if(e.key === "ArrowUp"){ focus.el = Math.min(focus.el + 0.06, 1.42); lastInteract = Date.now(); renderFocusFrame(); e.preventDefault(); }
+    else if(e.key === "ArrowDown"){ focus.el = Math.max(focus.el - 0.06, 0.06); lastInteract = Date.now(); renderFocusFrame(); e.preventDefault(); }
+    else if(e.key === "+" || e.key === "="){ focus.dist = Math.max(focus.dist * 0.92, 420); lastInteract = Date.now(); renderFocusFrame(); }
+    else if(e.key === "-" || e.key === "_"){ focus.dist = Math.min(focus.dist * 1.08, 9000); lastInteract = Date.now(); renderFocusFrame(); }
     else if(e.key === "Escape"){ closeFocus(); }
   });
   $("focusClaim").addEventListener("click", showFocusForm);
