@@ -853,6 +853,18 @@
   };
   let LIVE = false; /* true once the backend answers; otherwise local demo mode */
 
+  /* ---------- high-res satellite imagery (Esri World Imagery) ----------
+     PASTE YOUR KEY between the quotes below: create a free account at
+     location.arcgis.com, make an API key with basemap access, restrict it to
+     topsummit.lol + localhost referrers. Works unkeyed too, but the key keeps
+     usage cleanly inside your own free tier. */
+  const ESRI_KEY = "";
+  function esriTileUrl(z, x, y){
+    return ESRI_KEY
+      ? `https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}?token=${encodeURIComponent(ESRI_KEY)}`
+      : `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+  }
+
   /* ---------- the route: 14 waypoints, Khumbu trek + South Col route (approximate) ---------- */
   const ROUTE = [
     {name:"Lukla Airstrip",       lon:86.7278, lat:27.6857, alt:2860,  ft:"9,383"},
@@ -1405,6 +1417,121 @@
       scene.add(line);
 
       three = { renderer, scene, camera, curve, heightAt, wpU, starMats, lastAltM:0, flagGroup:null };
+
+      /* ============================================================
+         HIGH-RES SATELLITE OVERLAYS (Esri World Imagery, streamed)
+         The Sentinel base texture stays as instant fallback beneath.
+      ============================================================ */
+      const t2lon = (x, z) => x / Math.pow(2, z) * 360 - 180;
+      const t2lat = (y, z) => 180 / Math.PI * Math.atan(Math.sinh(Math.PI - 2 * Math.PI * y / Math.pow(2, z)));
+      const lon2t = (lon, z) => Math.floor((lon + 180) / 360 * Math.pow(2, z));
+      const lat2t = (lat, z) => Math.floor((1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+
+      function buildPatchMesh(pLonMin, pLonMax, pLatMin, pLatMax, seg, texture){
+        const pg = new THREE.BufferGeometry();
+        const n = (seg + 1) * (seg + 1);
+        const pp = new Float32Array(n * 3), pu = new Float32Array(n * 2);
+        let a = 0, b2 = 0;
+        for(let j = 0; j <= seg; j++){
+          const lat = pLatMax - (pLatMax - pLatMin) * (j / seg);
+          for(let i = 0; i <= seg; i++){
+            const lon = pLonMin + (pLonMax - pLonMin) * (i / seg);
+            const loc = toLocal(lon, lat);
+            pp[a++] = loc.x; pp[a++] = heightAt(lon, lat); pp[a++] = loc.z;
+            pu[b2++] = i / seg; pu[b2++] = 1 - j / seg;
+          }
+        }
+        const pidx = [];
+        for(let j = 0; j < seg; j++) for(let i = 0; i < seg; i++){
+          const q = j * (seg + 1) + i;
+          pidx.push(q, q + seg + 1, q + 1, q + 1, q + seg + 1, q + seg + 2);
+        }
+        pg.setAttribute("position", new THREE.BufferAttribute(pp, 3));
+        pg.setAttribute("uv", new THREE.BufferAttribute(pu, 2));
+        pg.setIndex(pidx);
+        pg.computeVertexNormals();
+        const pm = new THREE.MeshStandardMaterial({
+          map: texture, roughness: 1, metalness: 0,
+          polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4
+        });
+        const mesh = new THREE.Mesh(pg, pm);
+        scene.add(mesh);
+        return mesh;
+      }
+
+      function refreshView(){ if(typeof focus !== "undefined" && focus) renderFocusFrame(); else renderTerrain(); }
+
+      function streamPatch(z, x0, x1, y0, y1, seg){
+        const w = (x1 - x0 + 1) * 256, h = (y1 - y0 + 1) * 256;
+        const maxTex = renderer.capabilities.maxTextureSize || 8192;
+        const scale = Math.min(1, maxTex / Math.max(w, h));
+        const cvs = document.createElement("canvas");
+        cvs.width = Math.round(w * scale); cvs.height = Math.round(h * scale);
+        const c = cvs.getContext("2d");
+        const pLonMin = t2lon(x0, z), pLonMax = t2lon(x1 + 1, z);
+        const pLatMax = t2lat(y0, z), pLatMin = t2lat(y1 + 1, z);
+        /* prefill with the matching crop of the Sentinel base so gaps never show */
+        try{
+          const sx = (pLonMin - tb.lonMin) / (tb.lonMax - tb.lonMin) * texImg.width;
+          const sw = (pLonMax - pLonMin) / (tb.lonMax - tb.lonMin) * texImg.width;
+          const sy = (tb.latMax - pLatMax) / (tb.latMax - tb.latMin) * texImg.height;
+          const sh = (pLatMax - pLatMin) / (tb.latMax - tb.latMin) * texImg.height;
+          c.drawImage(texImg, sx, sy, sw, sh, 0, 0, cvs.width, cvs.height);
+        }catch(e){}
+        const ptex = new THREE.CanvasTexture(cvs);
+        ptex.colorSpace = THREE.SRGBColorSpace;
+        ptex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        const mesh = buildPatchMesh(pLonMin, pLonMax, pLatMin, pLatMax, seg, ptex);
+        refreshView();
+        /* stream tiles with a small pool; sharpen progressively */
+        const jobs = [];
+        for(let x = x0; x <= x1; x++) for(let y = y0; y <= y1; y++) jobs.push({x, y});
+        let idx = 0, done = 0, credited = false;
+        function pump(){
+          if(idx >= jobs.length) return;
+          const j = jobs[idx++];
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          const fin = ok=>{
+            if(ok){
+              c.drawImage(img, (j.x - x0) * 256 * scale, (j.y - y0) * 256 * scale, 256 * scale, 256 * scale);
+              if(!credited){
+                credited = true;
+                $("attribution").textContent += " High-resolution imagery © Esri — Maxar, Earthstar Geographics, and the GIS User Community.";
+              }
+            }
+            done++;
+            if(done % 24 === 0 || done === jobs.length){ ptex.needsUpdate = true; refreshView(); }
+            pump();
+          };
+          img.onload = ()=>fin(true);
+          img.onerror = ()=>fin(false);
+          img.src = esriTileUrl(z, j.x, j.y);
+        }
+        for(let k = 0; k < 10; k++) pump();
+        return mesh;
+      }
+
+      /* corridor: Base Camp -> Summit at z16 (~1.2 m/px) */
+      streamPatch(16, lon2t(86.840, 16), lon2t(86.940, 16), lat2t(28.016, 16), lat2t(27.952, 16), 220);
+
+      /* ultra-res patch (z17, ~0.6 m/px) around a focused waypoint, small LRU */
+      const spotPatches = [];
+      three.ensureSpotPatch = function(rank){
+        if(spotPatches.some(p=>p.rank === rank)) return;
+        const wp = ROUTE[SPOTS - rank];
+        const cz = 17, cx = lon2t(wp.lon, cz), cy = lat2t(wp.lat, cz);
+        const mesh = streamPatch(cz, cx - 2, cx + 2, cy - 2, cy + 2, 96);
+        spotPatches.push({ rank, mesh });
+        if(spotPatches.length > 5){
+          const old = spotPatches.shift();
+          scene.remove(old.mesh);
+          old.mesh.geometry.dispose();
+          old.mesh.material.map.dispose();
+          old.mesh.material.dispose();
+        }
+      };
+
       renderFlags3D();
 
       addEventListener("resize", ()=>{
@@ -1623,6 +1750,8 @@
     document.body.classList.add("focus-active");
     /* only the chosen flag stays in the scene */
     if(three.flagGroup) three.flagGroup.children.forEach(ch=>{ ch.visible = ch.userData.rank === rank; });
+    /* stream an ultra-res satellite patch around this waypoint */
+    if(three.ensureSpotPatch) three.ensureSpotPatch(rank);
     lastInteract = Date.now();
     startAuto();
     renderFocusFrame();
@@ -1708,9 +1837,10 @@
   const clampEl = v => Math.min(Math.max(v, 0.06), 1.42);
   const clampDist = v => Math.min(Math.max(v, 420), 9000);
   let dragY = null, pinchPts = new Map(), lastPinchDist = null;
+  const inUi = (t, sel)=> !!(t && t.closest && t.closest(sel));
   document.addEventListener("pointerdown", e=>{
     if(!focus) return;
-    if(e.target.closest(".focus-panel,a,button,input,select,.hud,.panel,.flag-card")) return;
+    if(inUi(e.target, ".focus-panel,a,button,input,select,.hud,.panel,.flag-card")) return;
     pinchPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if(pinchPts.size === 1){ dragX = e.clientX; dragY = e.clientY; }
     else { dragX = null; dragY = null; }
@@ -1774,7 +1904,7 @@
   });
   document.addEventListener("keydown", e=>{
     if(!focus) return;
-    if(e.target && e.target.closest && e.target.closest("input,select,textarea")){
+    if(inUi(e.target, "input,select,textarea")){
       if(e.key === "Escape") closeFocus();
       return;
     }
@@ -1829,7 +1959,7 @@
   /* clicking a flag in the 3D scene locks onto it */
   document.addEventListener("click", e=>{
     if(!three || !terrainOn) return;
-    if(e.target.closest("a,button,input,select,.flag-card,.panel,.hud,.focus-panel,.summit-card,.claim-bar,.checklist,.footgrid")) return;
+    if(inUi(e.target, "a,button,input,select,.flag-card,.panel,.hud,.focus-panel,.summit-card,.claim-bar,.checklist,.footgrid")) return;
     const nd = new THREE.Vector2(
       (e.clientX / innerWidth) * 2 - 1,
       -(e.clientY / innerHeight) * 2 + 1
