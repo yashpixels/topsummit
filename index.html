@@ -983,6 +983,9 @@
 
   function heroLoadFX(){
     if(!HAS_GSAP || REDUCED) return;
+    /* a hidden tab suspends rAF, which would freeze the entrance at opacity 0 —
+       skip the flourish unless the page is actually being looked at */
+    if(document.hidden) return;
     /* clearProps so this entrance can never leave inline styles behind that
        fight the scroll-fade tween (which re-inits after every claim) */
     gsap.from("[data-load]", {y:26, opacity:0, duration:1.15, stagger:0.09,
