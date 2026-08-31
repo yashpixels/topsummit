@@ -127,7 +127,9 @@
   .brandline .name b{color:var(--orange)}
   .eyebrow{
     font-size:.72rem;letter-spacing:.42em;text-transform:uppercase;
-    color:var(--ice-dim);margin-bottom:1.1rem;
+    color:var(--ice);margin-bottom:1.1rem;
+    background:rgba(6,12,24,.55);backdrop-filter:blur(6px);
+    padding:.5rem 1.1rem;border-radius:999px;
   }
   h1{
     font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
@@ -145,8 +147,9 @@
     max-width:94vw;flex-wrap:wrap;justify-content:center;
   }
   .relief-banner b{color:#6FE0A8}
-  .subline{margin:1.1rem auto 0;color:var(--ice-dim);font-size:1.04rem;max-width:52ch;line-height:1.65;
-    text-shadow:0 1px 12px rgba(4,8,16,.9)}
+  .subline{margin:1.1rem auto 0;color:#C9D9EA;font-size:1.02rem;max-width:52ch;line-height:1.65;
+    background:rgba(6,12,24,.55);backdrop-filter:blur(6px);
+    padding:.8rem 1.2rem;border-radius:14px}
   .claim-bar{margin:1.7rem auto .5rem;display:flex;flex-wrap:wrap;justify-content:center;gap:.55rem}
   .claim-bar input,.claim-bar select{
     height:50px;border-radius:12px;border:1px solid var(--line);
@@ -166,21 +169,29 @@
   .target-line{
     font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.14em;
     text-transform:uppercase;color:var(--ice);margin-bottom:.6rem;
+    background:rgba(6,12,24,.6);backdrop-filter:blur(6px);
+    padding:.45rem 1rem;border-radius:999px;
   }
   .target-line b{color:var(--orange-lit)}
-  .micro{color:var(--ice-dim);font-size:.8rem;max-width:56ch;margin:.4rem auto 0;line-height:1.6}
+  .micro{color:#B5C7DA;font-size:.8rem;max-width:56ch;margin:.4rem auto 0;line-height:1.6;
+    background:rgba(6,12,24,.5);backdrop-filter:blur(6px);
+    padding:.7rem 1rem;border-radius:12px}
   .form-error{color:var(--orange-lit);font-size:.84rem;font-weight:700;min-height:1.3em;margin-top:.45rem}
   .scroll-cue{
     position:absolute;left:50%;bottom:5svh;transform:translateX(-50%);
-    font-size:.7rem;letter-spacing:.34em;text-transform:uppercase;color:var(--ice-dim);
+    font-size:.7rem;letter-spacing:.34em;text-transform:uppercase;color:var(--ice);
     display:flex;flex-direction:column;align-items:center;gap:.5rem;white-space:nowrap;
   }
+  .scroll-cue{background:rgba(6,12,24,.5);backdrop-filter:blur(6px);
+    padding:.45rem 1rem .2rem;border-radius:999px}
   .scroll-cue::after{content:"";width:1px;height:34px;background:linear-gradient(180deg,var(--ice),transparent)}
 
   /* ---------- CAUSE ---------- */
   .cause{
     position:relative;z-index:5;text-align:center;
-    padding:10svh 1.2rem 4svh;max-width:720px;margin:0 auto;
+    padding:2.4rem 1.8rem;width:min(720px,92vw);margin:9svh auto 3svh;
+    background:rgba(6,12,24,.55);backdrop-filter:blur(8px);
+    border:1px solid rgba(191,227,255,.12);border-radius:24px;
   }
   .cause h2{
     font-family:"Bricolage Grotesque",sans-serif;font-weight:700;
@@ -227,10 +238,11 @@
   .camp:nth-child(even) .camp-inner{margin-right:auto;margin-left:max(4vw,calc(50vw - 620px))}
   .camp-inner{width:min(520px,94vw);position:relative}
   .waypoint{
-    display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem;
+    display:inline-flex;align-items:center;gap:.6rem;margin-bottom:.9rem;
     font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.24em;
-    text-transform:uppercase;color:var(--ice);
-    text-shadow:0 1px 8px rgba(4,8,16,.95);
+    text-transform:uppercase;color:var(--cloud);
+    background:rgba(6,12,24,.68);backdrop-filter:blur(6px);
+    padding:.5rem .95rem;border-radius:999px;
   }
   .waypoint::before{
     content:"";width:12px;height:12px;border-radius:50%;flex:none;
@@ -270,7 +282,10 @@
     background:var(--orange);color:#fff;font-weight:700;font-size:.9rem;
     transition:transform .15s cubic-bezier(.22,1,.36,1);
   }
-  .camp.vacant .spot-btn{background:transparent;border:1.5px dashed var(--ice-dim);color:var(--ice)}
+  .camp.vacant .spot-btn{
+    background:rgba(6,12,24,.72);backdrop-filter:blur(6px);
+    border:1.5px dashed var(--ice);color:var(--cloud);font-weight:700;
+  }
   .spot-btn:hover{transform:translateY(-2px)}
 
   /* ---------- FINALE ---------- */
@@ -286,10 +301,10 @@
   .summit-card{
     position:relative;margin:0 auto;width:min(640px,100%);
     background:linear-gradient(165deg,rgba(14,26,48,.88),rgba(8,15,30,.88));
-    border:1.5px solid var(--ice);
+    border:1.5px solid #F5C64F;    /* champion gold */
     border-radius:22px;padding:2.5rem 2rem 2rem;
     backdrop-filter:blur(12px);
-    box-shadow:0 0 0 1px rgba(191,227,255,.15), 0 40px 90px rgba(4,8,16,.7), 0 0 90px rgba(191,227,255,.14);
+    animation:glowGold 2.8s ease-in-out infinite alternate;
   }
   .summit-card .ribbon{
     position:absolute;top:-16px;left:50%;transform:translateX(-50%);
@@ -357,7 +372,8 @@
   .panel>h3 small{font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:.68rem;
     color:var(--ice-dim);letter-spacing:.12em;text-transform:uppercase}
   .champ-card{
-    background:rgba(255,90,31,.09);border:1px solid rgba(255,90,31,.4);
+    background:rgba(245,198,79,.07);border:1.5px solid #F5C64F;
+    box-shadow:0 0 22px rgba(245,198,79,.25);
     border-radius:15px;padding:1.05rem;display:flex;align-items:center;gap:.9rem;
   }
   .champ-card img{width:44px;height:44px;border-radius:11px;background:#fff}
@@ -555,8 +571,9 @@
   .spot-btn-row .spot-btn{margin-top:0;flex:1}
   .spot-view{
     flex:none;min-width:112px;height:44px;border-radius:11px;
-    border:1px solid var(--line);background:rgba(191,227,255,.08);
-    color:var(--ice);font-weight:700;font-size:.85rem;
+    border:1px solid rgba(191,227,255,.35);background:rgba(6,12,24,.72);
+    backdrop-filter:blur(6px);
+    color:var(--cloud);font-weight:700;font-size:.85rem;
     transition:transform .15s cubic-bezier(.22,1,.36,1);
   }
   .spot-view:hover{transform:translateY(-2px)}
@@ -566,11 +583,30 @@
     color:var(--ice);font-weight:700;font-size:.85rem;
   }
 
-  /* ---------- medals for the top ranks ---------- */
-  .camp.medal-2 .flag-card{border-left-color:#C9D6E5;
-    box-shadow:0 24px 60px rgba(4,8,16,.55), 0 0 44px rgba(201,214,229,.14)}
-  .camp.medal-3 .flag-card{border-left-color:#D98443;
-    box-shadow:0 24px 60px rgba(4,8,16,.55), 0 0 44px rgba(217,132,67,.14)}
+  /* ---------- medals for the top ranks: illuminated gold / silver / bronze ---------- */
+  @keyframes glowSilver{
+    from{box-shadow:0 24px 60px rgba(4,8,16,.55), 0 0 20px rgba(201,214,229,.28), inset 0 0 16px rgba(201,214,229,.05)}
+    to{box-shadow:0 24px 60px rgba(4,8,16,.55), 0 0 40px rgba(201,214,229,.5), inset 0 0 22px rgba(201,214,229,.1)}
+  }
+  @keyframes glowBronze{
+    from{box-shadow:0 24px 60px rgba(4,8,16,.55), 0 0 20px rgba(217,132,67,.28), inset 0 0 16px rgba(217,132,67,.05)}
+    to{box-shadow:0 24px 60px rgba(4,8,16,.55), 0 0 40px rgba(217,132,67,.5), inset 0 0 22px rgba(217,132,67,.1)}
+  }
+  @keyframes glowGold{
+    from{box-shadow:0 0 0 1px rgba(245,198,79,.2), 0 40px 90px rgba(4,8,16,.7), 0 0 30px rgba(245,198,79,.3), inset 0 0 22px rgba(245,198,79,.05)}
+    to{box-shadow:0 0 0 1px rgba(245,198,79,.35), 0 40px 90px rgba(4,8,16,.7), 0 0 55px rgba(245,198,79,.55), inset 0 0 30px rgba(245,198,79,.1)}
+  }
+  .camp.medal-2 .flag-card{
+    border:1.5px solid #C9D6E5;border-left:4px solid #C9D6E5;
+    animation:glowSilver 2.8s ease-in-out infinite alternate;
+  }
+  .camp.medal-3 .flag-card{
+    border:1.5px solid #D98443;border-left:4px solid #D98443;
+    animation:glowBronze 2.8s ease-in-out infinite alternate;
+  }
+  @media (prefers-reduced-motion:reduce){
+    .camp.medal-2 .flag-card,.camp.medal-3 .flag-card,.summit-card{animation:none}
+  }
   .flag-card .domain a{color:inherit;text-decoration:none}
   .flag-card .domain a:hover{color:var(--orange-lit)}
 
@@ -669,7 +705,7 @@
       <button class="orbit-btn" id="orbitR" aria-label="Rotate view right">⟳</button>
     </div>
     <form class="focus-form" id="focusForm" hidden novalidate>
-      <input id="focusDomain" type="text" inputmode="url" placeholder="yourcompany.com" aria-label="Your company URL" autocomplete="off">
+      <input id="focusDomain" type="text" inputmode="url" placeholder="yourcompany.com or x.com/you" aria-label="The URL to promote" autocomplete="off">
       <input id="focusTagline" type="text" maxlength="60" placeholder="What you do — one line (optional)" aria-label="One-line description (optional)">
       <button type="submit" id="focusPay">Pay $1 → plant flag</button>
       <p class="focus-err" id="focusErr" role="alert"></p>
@@ -723,10 +759,11 @@
   </h1>
   <p class="relief-banner" data-load="5">❤️ <span><b>50% of every dollar</b> goes to Save the Children's
     Nepal flood response.</span></p>
-  <p class="subline" data-load="6">Fourteen sponsor spots up the real Khumbu route, from a teahouse
-    in Lukla to the roof of the world. Scroll flies the actual terrain.</p>
+  <p class="subline" data-load="6">Fourteen sponsor spots up the real Khumbu route — plant your SaaS,
+    your company, your portfolio, your @handle, literally anything you want the
+    internet to look up to. Scroll flies the actual terrain.</p>
   <form class="claim-bar" id="claimForm" data-load="7" novalidate>
-    <input id="domainInput" type="text" inputmode="url" placeholder="yourcompany.com" aria-label="Your company URL" autocomplete="off">
+    <input id="domainInput" type="text" inputmode="url" placeholder="yourcompany.com or x.com/you" aria-label="The URL to promote" autocomplete="off">
     <select id="categorySelect" aria-label="Choose a category">
       <option value="">Choose a category</option>
       <option>AI</option><option>SaaS</option><option>Dev tools</option>
@@ -834,9 +871,10 @@
   </div>
   <div class="steps">
     <div class="step" data-reveal><span class="n">01</span><span class="ic">🌐</span>
-      <h3>Plant your URL</h3>
-      <p>Drop your company's link, a one-line pitch, and pick any waypoint on the real
-        Everest route — from Lukla Airstrip to the summit itself.</p></div>
+      <h3>Plant any link</h3>
+      <p>A SaaS, a company, a portfolio, a newsletter, even your social @handle
+        (x.com/you) — if it has a URL, it can fly a flag. Add a one-line pitch and
+        pick any waypoint from Lukla Airstrip to the summit itself.</p></div>
     <div class="step" data-reveal><span class="n">02</span><span class="ic">💵</span>
       <h3>Pay the spot price</h3>
       <p>Open spots cost their base price: $1 at the bottom, $14 at the top. Checkout is
@@ -1026,6 +1064,12 @@
 
   const $ = id => document.getElementById(id);
   function hueFor(str){ let h=0; for(const ch of str) h=(h*31+ch.charCodeAt(0))%360; return h; }
+  /* accepts plain domains AND paths/handles: yourco.com, x.com/you, github.com/you/repo */
+  function normalizeLink(raw){
+    const d = String(raw).trim().toLowerCase()
+      .replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/+$/, "");
+    return (/^[a-z0-9-]+(\.[a-z0-9-]+)+(\/[a-z0-9\-._~@%]+)*$/.test(d) && d.length <= 80) ? d : null;
+  }
   function pennantSVG(domain){
     const hue = hueFor(domain);
     return `<svg viewBox="0 0 44 64" aria-hidden="true">
@@ -1145,8 +1189,9 @@
     }catch(e){}
   }
   function faviconUrl(domain){
+    const host = String(domain).split("/")[0];   /* x.com/you -> favicon of x.com */
     return "https://images.weserv.nl/?url=" +
-      encodeURIComponent("www.google.com/s2/favicons?domain=" + domain + "&sz=64");
+      encodeURIComponent("www.google.com/s2/favicons?domain=" + host + "&sz=64");
   }
   function timeAgo(iso){
     const s = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -1274,10 +1319,9 @@
     e.preventDefault();
     formError.style.color = "";
     formError.textContent = "";
-    let d = $("domainInput").value.trim().toLowerCase()
-      .replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/\/.*$/,"");
-    if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d)){
-      formError.textContent = "That doesn't look like a URL. Try something like yourcompany.com";
+    const d = normalizeLink($("domainInput").value);
+    if(!d){
+      formError.textContent = "That doesn't look like a URL. Try yourcompany.com or x.com/yourhandle";
       $("domainInput").focus();
       return;
     }
@@ -1712,7 +1756,8 @@
       c.clearRect(0, 0, 512, 256);
       c.fillStyle = "#F4F9FF"; c.fillRect(16, 8, 8, 240);   /* pole */
       if(spot){
-        const accent = rank === 1 ? "#FF5A1F" : `hsl(${hueFor(spot.domain)} 70% 55%)`;
+        const accent = rank === 1 ? "#F5C64F" : rank === 2 ? "#C9D6E5"
+        : rank === 3 ? "#D98443" : `hsl(${hueFor(spot.domain)} 70% 55%)`;
         roundRect(c, 34, 22, 452, 172, 18);
         c.fillStyle = "rgba(8,15,29,.95)"; c.fill();
         c.lineWidth = 5; c.strokeStyle = accent; c.stroke();
@@ -1760,9 +1805,10 @@
     if(spot){
       /* fetch the company favicon via CORS-friendly sources (Google's favicon
          endpoint blocks cross-origin canvas use); monogram stays as fallback */
+      const host = String(spot.domain).split("/")[0];
       const sources = [
-        "https://images.weserv.nl/?url=" + encodeURIComponent("www.google.com/s2/favicons?domain=" + spot.domain + "&sz=64"),
-        "https://unavatar.io/" + encodeURIComponent(spot.domain)
+        "https://images.weserv.nl/?url=" + encodeURIComponent("www.google.com/s2/favicons?domain=" + host + "&sz=64"),
+        "https://unavatar.io/" + encodeURIComponent(host)
       ];
       (function tryNext(i){
         if(i >= sources.length) return;
@@ -2077,10 +2123,9 @@
     const rank = focus.rank;
     const errEl = $("focusErr");
     errEl.textContent = "";
-    const d = $("focusDomain").value.trim().toLowerCase()
-      .replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/\/.*$/,"");
-    if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d)){
-      errEl.textContent = "That doesn't look like a URL — try yourcompany.com";
+    const d = normalizeLink($("focusDomain").value);
+    if(!d){
+      errEl.textContent = "That doesn't look like a URL — try yourcompany.com or x.com/yourhandle";
       $("focusDomain").focus();
       return;
     }
