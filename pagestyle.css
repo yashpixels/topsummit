@@ -1,0 +1,46 @@
+/* shared styling for TopSummit info pages */
+:root{
+  --night:#0B1526; --night-deep:#060C18; --ice:#BFE3FF; --ice-dim:#7E9DBC;
+  --cloud:#F4F9FF; --orange:#FF5A1F; --orange-lit:#FF8A5C;
+  --card:rgba(10,20,38,.72); --line:rgba(191,227,255,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"Archivo",system-ui,sans-serif;
+  background:linear-gradient(180deg,#0E1B30,var(--night-deep) 40svh) fixed;
+  color:var(--cloud);-webkit-font-smoothing:antialiased;min-height:100svh;
+}
+::selection{background:var(--orange);color:#fff}
+a{color:var(--ice)}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:860px;margin:0 auto;padding:1.4rem 1.4rem 0;
+}
+.brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--cloud);
+  font-weight:700;font-size:1.02rem}
+.brand b{color:var(--orange)}
+.brand svg{width:26px;height:26px}
+.topbar .back{color:var(--ice-dim);text-decoration:none;font-size:.86rem}
+.topbar .back:hover{color:var(--cloud)}
+main{max-width:860px;margin:0 auto;padding:3rem 1.4rem 6rem}
+.pill{
+  display:inline-block;font-size:.66rem;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--orange-lit);border:1px solid rgba(255,90,31,.4);border-radius:999px;
+  padding:.4rem 1rem;margin-bottom:1rem;
+}
+h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+  font-size:clamp(1.9rem,5vw,3rem);letter-spacing:-.02em;margin-bottom:.6rem}
+.updated{color:var(--ice-dim);font-size:.82rem;margin-bottom:2.2rem;
+  font-family:"IBM Plex Mono",monospace}
+h2{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.25rem;
+  margin:2.2rem 0 .7rem}
+p,li{color:#B9CBDE;line-height:1.75;font-size:.95rem}
+p+p{margin-top:.8rem}
+ul{padding-left:1.2rem;margin:.6rem 0}
+li{margin:.4rem 0}
+.note{
+  background:var(--card);border:1px solid var(--line);border-left:4px solid var(--orange);
+  border-radius:12px;padding:1rem 1.2rem;margin:1.6rem 0;font-size:.9rem;
+}
+footer{max-width:860px;margin:0 auto;padding:0 1.4rem 3rem;color:var(--ice-dim);
+  font-size:.8rem;line-height:1.7}
