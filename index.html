@@ -446,6 +446,57 @@
     animation:pulse 2s infinite}
   .dodoline{display:inline-flex;align-items:center;gap:.45rem;margin-top:1rem;font-size:.8rem}
 
+  /* ---------- 360° focus mode ---------- */
+  .focus-ui{
+    position:fixed;inset:0;z-index:80;pointer-events:none;
+    display:flex;align-items:flex-end;justify-content:center;
+    padding:0 1rem 4svh;
+  }
+  .focus-panel{
+    pointer-events:auto;position:relative;width:min(560px,94vw);
+    background:rgba(8,15,29,.93);border:1px solid var(--line);border-radius:20px;
+    padding:1.4rem 1.5rem 1.1rem;backdrop-filter:blur(12px);
+    box-shadow:0 30px 80px rgba(4,8,16,.75);
+  }
+  .focus-close{
+    position:absolute;top:.85rem;right:.9rem;width:32px;height:32px;
+    background:none;border:1px solid var(--line);color:var(--ice-dim);
+    border-radius:50%;font-size:.85rem;
+  }
+  .focus-close:hover{color:var(--cloud);border-color:var(--ice)}
+  .focus-way{font-family:"IBM Plex Mono",monospace;font-size:.66rem;
+    letter-spacing:.26em;text-transform:uppercase;color:var(--orange-lit)}
+  #focusName{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:1.45rem;margin:.25rem 0 .5rem}
+  .focus-fact{color:var(--ice-dim);font-size:.87rem;line-height:1.65}
+  .focus-holder{margin-top:.65rem;font-size:.84rem;color:var(--ice);font-weight:500}
+  .focus-row{display:flex;gap:.6rem;margin-top:1rem}
+  .orbit-btn{
+    flex:1;height:46px;border-radius:12px;border:1px solid var(--line);
+    background:rgba(191,227,255,.08);color:var(--ice);font-weight:700;
+    user-select:none;touch-action:none;
+  }
+  .orbit-btn:active{background:var(--ice);color:var(--night)}
+  .focus-claim{
+    flex:1.4;height:46px;border-radius:12px;border:none;
+    background:var(--orange);color:#fff;font-weight:700;
+  }
+  .focus-hint{margin-top:.6rem;text-align:center;font-size:.7rem;color:var(--ice-dim)}
+  .spot-btn-row{display:flex;gap:.6rem;margin-top:.9rem}
+  .spot-btn-row .spot-btn{margin-top:0;flex:1}
+  .spot-view{
+    flex:none;min-width:112px;height:44px;border-radius:11px;
+    border:1px solid var(--line);background:rgba(191,227,255,.08);
+    color:var(--ice);font-weight:700;font-size:.85rem;
+    transition:transform .15s cubic-bezier(.22,1,.36,1);
+  }
+  .spot-view:hover{transform:translateY(-2px)}
+  .steal-view{
+    margin:1rem auto 0;display:block;height:44px;border-radius:11px;padding:0 1.2rem;
+    border:1px solid var(--line);background:rgba(191,227,255,.08);
+    color:var(--ice);font-weight:700;font-size:.85rem;
+  }
+
   /* ---------- medals for the top ranks ---------- */
   .camp.medal-2 .flag-card{border-left-color:#C9D6E5;
     box-shadow:0 24px 60px rgba(4,8,16,.55), 0 0 44px rgba(201,214,229,.14)}
@@ -492,6 +543,23 @@
 <div id="terrain3d" aria-hidden="true"></div>
 <div class="vignette" aria-hidden="true"></div>
 <canvas id="snow" aria-hidden="true"></canvas>
+
+<!-- 360° focus mode -->
+<div class="focus-ui" id="focusUI" hidden>
+  <div class="focus-panel" role="dialog" aria-label="Spot viewer">
+    <button class="focus-close" id="focusClose" aria-label="Exit 360° view">✕</button>
+    <p class="focus-way" id="focusWay">—</p>
+    <h3 id="focusName">—</h3>
+    <p class="focus-fact" id="focusFact"></p>
+    <p class="focus-holder" id="focusHolder"></p>
+    <div class="focus-row">
+      <button class="orbit-btn" id="orbitL" aria-label="Rotate view left">⟲&nbsp;hold</button>
+      <button class="focus-claim" id="focusClaim">Claim → $1</button>
+      <button class="orbit-btn" id="orbitR" aria-label="Rotate view right">hold&nbsp;⟳</button>
+    </div>
+    <p class="focus-hint">Hold ⟲ / ⟳ (or the arrow keys) to circle the spot — 360°.</p>
+  </div>
+</div>
 
 <!-- HUD -->
 <div class="hud left" aria-label="Mountain stats">
@@ -603,6 +671,7 @@
       </div>
     </div>
     <button class="steal" id="stealBtn">Claim the summit → $14</button>
+    <button class="steal-view" id="summitView">🔭 360° summit view</button>
   </div>
 </section>
 
@@ -767,6 +836,23 @@
   ];
   const SPOTS = ROUTE.length;                     /* 14 */
   const FT_MIN = 9383, FT_MAX = 29032;
+  /* one piece of real mountain knowledge per waypoint (indexes match ROUTE) */
+  const WAYPOINT_INFO = [
+    "Gateway to Everest. Tenzing-Hillary Airport's short, sloped runway ends at a mountain wall on one side and a 600-metre drop on the other — one of the most dramatic commercial landings on Earth. Nearly every expedition starts here.",
+    "The Sherpa capital: a horseshoe-shaped market town carved into the hillside at 3,440 m. Climbers pause here for days to acclimatize, and its Saturday market has supplied expeditions since the 1950s.",
+    "Home of the Khumbu's most important Buddhist monastery, rebuilt after a fire in 1989. Expeditions traditionally stop for a blessing from the lama here before heading into the high mountains.",
+    "A summer farming village at 4,410 m, its stone-walled fields among the highest cultivated land in the world. The classic second acclimatization stop, with Ama Dablam towering across the valley.",
+    "A tiny cluster of teahouses below the Khumbu Glacier's moraine. On the ridge above stand rows of memorial chortens honouring climbers and Sherpas who died on Everest.",
+    "A huddle of lodges at 4,940 m beside the glacier. Nights here deliver the first taste of serious altitude — the air holds barely half the oxygen of sea level.",
+    "The last inhabited place on the route: a frozen lakebed at 5,164 m with a handful of teahouses. Beyond here it's moraine, ice, and rock all the way to Base Camp.",
+    "A temporary city rebuilt every spring on the slowly-moving Khumbu Glacier. Climbers live here for weeks, rotating up and down the mountain to let their bodies adapt before a summit push.",
+    "Perched above the Khumbu Icefall — a shifting maze of seracs and crevasses crossed on aluminium ladders, usually before dawn while the ice is still frozen in place.",
+    "In the Western Cwm, the 'Valley of Silence': a windless glacial basin that can roast climbers by day and freeze them by night. Most expeditions run it as their advanced base.",
+    "Cut into the hard blue ice of the Lhotse Face at ~7,160 m, where climbers stay clipped to fixed ropes for every step. Many begin breathing supplemental oxygen here.",
+    "The wind-scoured saddle between Everest and Lhotse at 7,950 m — the doorstep of the death zone, where the body can no longer recover and summit pushes launch near midnight.",
+    "A small ledge at ~8,400 m where climbers swap oxygen bottles at dawn and catch their first view of the summit ridge. The last 450 vertical metres take most people four to six hours.",
+    "The roof of the world: 8,849 m — 29,032 ft. The jet stream hammers it for most of the year, the air carries a third of sea-level oxygen, and climbers usually get only minutes on top."
+  ];
   const wpForRank = r => ROUTE[SPOTS - r];        /* rank 1 = summit ... rank 14 = Lukla */
   const basePrice = r => SPOTS + 1 - r;           /* summit $14 ... Lukla $1 */
 
@@ -860,9 +946,12 @@
               <span class="paid">${s ? "$" + s.price : "open"}</span>
             </span>
           </article>
-          <button class="spot-btn" data-rank="${r}">
-            ${s ? `Cut in above ${s.domain} → $${price}` : `Plant your flag here → $${price}`}
-          </button>
+          <div class="spot-btn-row">
+            <button class="spot-btn" data-rank="${r}">
+              ${s ? `Cut in above ${s.domain} → $${price}` : `Plant your flag here → $${price}`}
+            </button>
+            <button class="spot-view" data-rank="${r}">🔭 360° view</button>
+          </div>
         </div>`;
       const domEl = sec.querySelector(".domain");
       const tagEl = sec.querySelector(".tag");
@@ -886,6 +975,9 @@
         scrollToEl("#top");
         setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED?0:900);
       });
+    });
+    campsEl.querySelectorAll(".spot-view").forEach(btn=>{
+      btn.addEventListener("click", ()=>focusSpot(parseInt(btn.dataset.rank, 10)));
     });
 
     /* summit / finale */
@@ -1210,6 +1302,64 @@
       scene.add(sun);
       scene.add(new THREE.HemisphereLight(0xbcd8f5, 0x2a2118, 0.85));
 
+      /* ---- night sky: stars + a Milky Way band, fading in with altitude ---- */
+      function starSprite(){
+        const c = document.createElement("canvas"); c.width = c.height = 64;
+        const g = c.getContext("2d");
+        const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, "rgba(255,255,255,1)");
+        grad.addColorStop(0.35, "rgba(255,255,255,.5)");
+        grad.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(c);
+      }
+      const starTex = starSprite();
+      const bandAxis = new THREE.Vector3(1, 0, 0.3).normalize();
+      function makeStars(count, size, baseOpacity, bandOnly){
+        const pos = new Float32Array(count * 3);
+        const col = new Float32Array(count * 3);
+        const R = 95000;
+        for(let i = 0; i < count; i++){
+          let v;
+          if(bandOnly){
+            /* cluster along a tilted great circle = the galactic band */
+            const a = Math.random() * Math.PI * 2;
+            const spread = (Math.random() + Math.random() + Math.random() - 1.5) * 0.16;
+            v = new THREE.Vector3(Math.cos(a), spread, Math.sin(a)).normalize();
+            v.applyAxisAngle(bandAxis, 1.0);
+          }else{
+            const u = Math.random() * 2 - 1, ph = Math.random() * Math.PI * 2;
+            const rr = Math.sqrt(1 - u * u);
+            v = new THREE.Vector3(rr * Math.cos(ph), u, rr * Math.sin(ph));
+          }
+          if(v.y < 0.02) v.y = 0.02 + Math.random() * 0.25; /* keep above horizon */
+          v.normalize();
+          pos[i*3] = v.x * R; pos[i*3+1] = v.y * R; pos[i*3+2] = v.z * R;
+          const b = 0.45 + Math.random() * 0.55;
+          const tint = Math.random();
+          col[i*3]   = b * (tint > 0.85 ? 1.0 : 0.82 + Math.random() * 0.18);
+          col[i*3+1] = b * 0.92;
+          col[i*3+2] = b * (tint < 0.72 ? 1.0 : 0.78);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+        const mat = new THREE.PointsMaterial({
+          size, sizeAttenuation: true, map: starTex, transparent: true,
+          vertexColors: true, opacity: 0, depthWrite: false, fog: false
+        });
+        mat.userData.baseOpacity = baseOpacity;
+        const pts = new THREE.Points(geo, mat);
+        pts.renderOrder = -1;
+        scene.add(pts);
+        return mat;
+      }
+      const starMats = [
+        makeStars(3800, 210, 0.9, false),   /* the general sky            */
+        makeStars(2600, 150, 0.75, true),   /* the Milky Way band         */
+        makeStars(260, 520, 1.0, false)     /* a handful of bright stars  */
+      ];
+
       const pts = ROUTE.map(w=>{
         const l = toLocal(w.lon, w.lat);
         return new THREE.Vector3(l.x, Math.max(w.alt, heightAt(w.lon, w.lat)) + 60, l.z);
@@ -1232,7 +1382,7 @@
       line.computeLineDistances();
       scene.add(line);
 
-      three = { renderer, scene, camera, curve, heightAt, wpU, lastAltM:0, flagGroup:null };
+      three = { renderer, scene, camera, curve, heightAt, wpU, starMats, lastAltM:0, flagGroup:null };
       renderFlags3D();
 
       addEventListener("resize", ()=>{
@@ -1352,6 +1502,7 @@
       const s = r === 1 ? 1050 : 760;
       sp.scale.set(s, s/2, 1);
       sp.position.set(l.x, y, l.z);
+      sp.userData.rank = r;
       g.add(sp);
     }
     three.flagGroup = g;
@@ -1374,6 +1525,7 @@
     const ahead = curve.getPointAt(Math.min(t + 0.02, 1));
     const tangent = curve.getTangentAt(Math.min(t, 0.995)).setY(0).normalize();
     three.lastAltM = target.y;
+    setStarOpacity(target.y);
     /* pull in tight on the upper mountain: 5.4 km back -> 1.5 km, 1.6 km up -> 450 m */
     const back = 5400 - t * 3900;
     const up = 1600 - t * 1150;
@@ -1406,11 +1558,106 @@
     three.scene.fog.near = 14000 - t * 6000;
     three.scene.fog.far = 90000 - t * 32000;
   }
+  function setStarOpacity(altM){
+    if(!three || !three.starMats) return;
+    /* stars emerge as the sky thins — faint above Base Camp, blazing at the top */
+    const f = Math.min(Math.max((altM - 4300) / 4000, 0), 1);
+    three.starMats.forEach(m=>{ m.opacity = f * m.userData.baseOpacity; });
+  }
   function renderTerrain(){
     if(!three) return;
+    if(focus){ renderFocusFrame(); return; }
     cameraAt(lastT);
     three.renderer.render(three.scene, three.camera);
   }
+
+  /* ---------- 360° focus mode ---------- */
+  let focus = null, orbitTimer = null;
+  function focusSpot(rank){
+    if(!three || !terrainOn){ return; }
+    const idx = SPOTS - rank;
+    const wp = ROUTE[idx];
+    const s = state.spots[rank - 1];
+    focus = { rank, az: Math.PI * 0.3 };
+    $("focusWay").textContent = `${wp.ft} ft · spot #${rank}`;
+    $("focusName").textContent = wp.name;
+    $("focusFact").textContent = WAYPOINT_INFO[idx];
+    $("focusHolder").textContent = s
+      ? `🚩 Held by ${s.domain} — paid $${s.price}.`
+      : "🏳️ This waypoint is open.";
+    $("focusClaim").textContent = (s ? "Cut in → $" : "Claim → $") + priceFor(rank);
+    $("focusUI").hidden = false;
+    renderFocusFrame();
+  }
+  function closeFocus(){
+    stopOrbit();
+    focus = null;
+    $("focusUI").hidden = true;
+    applyProgress(lastT);   /* hand sky + camera back to the scroll position */
+  }
+  function renderFocusFrame(){
+    if(!three || !focus) return;
+    const wp = ROUTE[SPOTS - focus.rank];
+    const l = toLocal(wp.lon, wp.lat);
+    const groundY = Math.max(wp.alt, three.heightAt(wp.lon, wp.lat));
+    const center = new THREE.Vector3(l.x, groundY + 130, l.z);
+    const dist = 1500, up = 480;
+    const cam = new THREE.Vector3(
+      center.x + Math.sin(focus.az) * dist,
+      groundY + up,
+      center.z + Math.cos(focus.az) * dist
+    );
+    const camLon = LON0 + cam.x / MPERLON, camLat = LAT0 - cam.z / MPERLAT;
+    cam.y = Math.max(cam.y, three.heightAt(camLon, camLat) + 240);
+    three.camera.position.copy(cam);
+    three.camera.lookAt(center);
+    three.lastAltM = groundY;
+    setStarOpacity(groundY);
+    skyAt(Math.min(Math.max((groundY - 2860) / 5989, 0), 1));
+    const ridgeFog = mixColor([157,185,216], [26,36,58], Math.min(Math.max((groundY - 2860) / 5989, 0), 1));
+    three.scene.fog.color.setRGB(ridgeFog[0]/255, ridgeFog[1]/255, ridgeFog[2]/255);
+    three.renderer.render(three.scene, three.camera);
+  }
+  function startOrbit(dir){
+    stopOrbit();
+    orbitTimer = setInterval(()=>{
+      if(focus){ focus.az += dir * 0.035; renderFocusFrame(); }
+    }, 30);
+  }
+  function stopOrbit(){ if(orbitTimer){ clearInterval(orbitTimer); orbitTimer = null; } }
+  $("focusClose").addEventListener("click", closeFocus);
+  [["orbitL", 1], ["orbitR", -1]].forEach(([id, dir])=>{
+    const b = $(id);
+    b.addEventListener("pointerdown", e=>{ e.preventDefault(); startOrbit(dir); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev=>b.addEventListener(ev, stopOrbit));
+  });
+  document.addEventListener("keydown", e=>{
+    if(!focus) return;
+    if(e.key === "ArrowLeft"){ focus.az += 0.09; renderFocusFrame(); e.preventDefault(); }
+    else if(e.key === "ArrowRight"){ focus.az -= 0.09; renderFocusFrame(); e.preventDefault(); }
+    else if(e.key === "Escape"){ closeFocus(); }
+  });
+  $("focusClaim").addEventListener("click", ()=>{
+    const r = focus ? focus.rank : 1;
+    closeFocus();
+    setTarget(r);
+    scrollToEl("#top");
+    setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED ? 0 : 900);
+  });
+  $("summitView").addEventListener("click", ()=>focusSpot(1));
+  /* clicking a flag in the 3D scene locks onto it */
+  document.addEventListener("click", e=>{
+    if(!three || !terrainOn) return;
+    if(e.target.closest("a,button,input,select,.flag-card,.panel,.hud,.focus-panel,.summit-card,.claim-bar,.checklist,.footgrid")) return;
+    const nd = new THREE.Vector2(
+      (e.clientX / innerWidth) * 2 - 1,
+      -(e.clientY / innerHeight) * 2 + 1
+    );
+    const rc = new THREE.Raycaster();
+    rc.setFromCamera(nd, three.camera);
+    const hits = rc.intersectObjects(three.flagGroup ? three.flagGroup.children : [], false);
+    if(hits.length) focusSpot(hits[0].object.userData.rank);
+  });
 
   /* ---------- stylized fallback backdrop ---------- */
   function mixColor(a, b, u){ return [0,1,2].map(i=>Math.round(a[i]+(b[i]-a[i])*u)); }
