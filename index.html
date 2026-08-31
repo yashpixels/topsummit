@@ -24,6 +24,7 @@
   *{margin:0;padding:0;box-sizing:border-box}
   [hidden]{display:none !important}
   html{overflow-x:hidden}
+  html.no-scroll{overflow:hidden}
   body{
     font-family:"Archivo",system-ui,sans-serif;
     background:var(--night-deep);
@@ -1581,6 +1582,12 @@
 
   /* ---------- 360° focus mode ---------- */
   let focus = null, orbitTimer = null, autoTimer = null, dragX = null, lastInteract = 0;
+  /* the page must not scroll while a flag is focused — the scroll-driven camera
+     would fight the orbit and glitch */
+  function lockScroll(on){
+    if(lenis){ on ? lenis.stop() : lenis.start(); }
+    document.documentElement.classList.toggle("no-scroll", on);
+  }
   function focusSpot(rank){
     if(!three || !terrainOn){ return; }
     const idx = SPOTS - rank;
@@ -1598,6 +1605,7 @@
     $("focusForm").hidden = true;
     $("focusErr").textContent = "";
     $("focusUI").hidden = false;
+    lockScroll(true);
     lastInteract = Date.now();
     startAuto();
     renderFocusFrame();
@@ -1638,6 +1646,7 @@
     dragX = null;
     focus = null;
     $("focusUI").hidden = true;
+    lockScroll(false);
     applyProgress(lastT);   /* hand sky + camera back to the scroll position */
   }
   function renderFocusFrame(){
