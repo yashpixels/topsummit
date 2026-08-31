@@ -858,7 +858,7 @@
      location.arcgis.com, make an API key with basemap access, restrict it to
      topsummit.lol + localhost referrers. Works unkeyed too, but the key keeps
      usage cleanly inside your own free tier. */
-  const ESRI_KEY = "";
+  const ESRI_KEY = "AAPTa7EM57ul3s3Jofq0rEAk87Q..HzENOlQXB9uhzetag29ZbIolNv8QJ8oV4yovGMb-OwNjLMLS4jHkBw_kJHpkzv0J8MNuABzfcQ1DQchWshHewHKXpc8q-XBEKXLD2OCbhppfS7s3wOqagT8ZuOIbuq9LrYrEKyG_RSpR01CRFUmmzG3fDbHceVhkCOy_w4at1dZEEcnveoKW51iGZkLGPcSRn_Fh8v6JWht81H7-OQCaqQ84maYZi3tOSzc43eEw1M9iS5HjBLgbnPZGckN5AT1_5sjvMRUi";
   function esriTileUrl(z, x, y){
     return ESRI_KEY
       ? `https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}?token=${encodeURIComponent(ESRI_KEY)}`
