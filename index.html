@@ -983,7 +983,10 @@
 
   function heroLoadFX(){
     if(!HAS_GSAP || REDUCED) return;
-    gsap.from("[data-load]", {y:26, opacity:0, duration:1.15, stagger:0.09, ease:"power4.out", delay:0.15});
+    /* clearProps so this entrance can never leave inline styles behind that
+       fight the scroll-fade tween (which re-inits after every claim) */
+    gsap.from("[data-load]", {y:26, opacity:0, duration:1.15, stagger:0.09,
+      ease:"power4.out", delay:0.15, clearProps:"opacity,transform"});
   }
   function initScrollFX(){
     if(!HAS_GSAP){ applyProgress(0); return; }
@@ -1005,10 +1008,12 @@
       gsap.from(el, {y:50, opacity:0, duration:1.2, ease:"power3.out",
         scrollTrigger:{trigger:el, start:"top 82%"}});
     });
-    gsap.to(".hero > *:not(.scroll-cue)", {
-      opacity:0, y:-60, ease:"none", stagger:0.012,
-      scrollTrigger:{ trigger:".hero", start:"top top", end:"70% top", scrub:0.6 }
-    });
+    /* explicit fromTo + immediateRender:false so re-initialising after a claim
+       can never capture the hero mid-entrance and freeze it invisible */
+    gsap.fromTo(".hero > *:not(.scroll-cue)",
+      { opacity:1, y:0 },
+      { opacity:0, y:-60, ease:"none", stagger:0.012, immediateRender:false,
+        scrollTrigger:{ trigger:".hero", start:"top top", end:"70% top", scrub:0.6 } });
 
     gsap.utils.toArray(".camp").forEach((sec,i)=>{
       const card = sec.querySelector(".flag-card");
