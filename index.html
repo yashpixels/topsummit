@@ -449,6 +449,17 @@
   .dodoline{display:inline-flex;align-items:center;gap:.45rem;margin-top:1rem;font-size:.8rem}
 
   /* ---------- 360° focus mode ---------- */
+  /* while a flag is focused, everything else steps out of the frame */
+  body.focus-active .hero,
+  body.focus-active .cause,
+  body.focus-active .climb,
+  body.focus-active .finale,
+  body.focus-active .board,
+  body.focus-active .howit,
+  body.focus-active .rules,
+  body.focus-active .basefooter,
+  body.focus-active .ladder-rail,
+  body.focus-active .hud{visibility:hidden}
   .focus-ui{
     position:fixed;inset:0;z-index:80;pointer-events:none;
     display:flex;align-items:flex-end;justify-content:center;
@@ -1516,6 +1527,7 @@
     }
     three.flagGroup = g;
     three.scene.add(g);
+    if(focus) g.children.forEach(ch=>{ ch.visible = ch.userData.rank === focus.rank; });
     if(terrainOn) renderTerrain();
   }
   /* card progress r (0..1, linear across the 14 spots) -> arc fraction u */
@@ -1606,6 +1618,9 @@
     $("focusErr").textContent = "";
     $("focusUI").hidden = false;
     lockScroll(true);
+    document.body.classList.add("focus-active");
+    /* only the chosen flag stays in the scene */
+    if(three.flagGroup) three.flagGroup.children.forEach(ch=>{ ch.visible = ch.userData.rank === rank; });
     lastInteract = Date.now();
     startAuto();
     renderFocusFrame();
@@ -1647,6 +1662,8 @@
     focus = null;
     $("focusUI").hidden = true;
     lockScroll(false);
+    document.body.classList.remove("focus-active");
+    if(three && three.flagGroup) three.flagGroup.children.forEach(ch=>{ ch.visible = true; });
     applyProgress(lastT);   /* hand sky + camera back to the scroll position */
   }
   function renderFocusFrame(){
