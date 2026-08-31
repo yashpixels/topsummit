@@ -1451,7 +1451,7 @@
         pg.setIndex(pidx);
         pg.computeVertexNormals();
         const pm = new THREE.MeshStandardMaterial({
-          map: texture, roughness: 1, metalness: 0,
+          map: texture, roughness: 1, metalness: 0, transparent: true,
           polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4
         });
         const mesh = new THREE.Mesh(pg, pm);
@@ -1460,6 +1460,26 @@
       }
 
       function refreshView(){ if(typeof focus !== "undefined" && focus) renderFocusFrame(); else renderTerrain(); }
+
+      /* fade each patch's borders to transparent so it blends into the base
+         imagery instead of ending in a hard, differently-graded rectangle */
+      function featherEdges(c, w, h){
+        const px = Math.max(24, Math.round(Math.min(w, h) * 0.04));
+        c.save();
+        c.globalCompositeOperation = "destination-out";
+        [[0, 0, 0, px, 0, 0, 0, px],            /* top    */
+         [0, h, 0, h - px, 0, h, 0, h - px],    /* bottom */
+         [0, 0, px, 0, 0, 0, px, 0],            /* left   */
+         [w, 0, w - px, 0, w, 0, w - px, 0]     /* right  */
+        ].forEach(([x0, y0, x1, y1])=>{
+          const g = c.createLinearGradient(x0, y0, x1, y1);
+          g.addColorStop(0, "rgba(0,0,0,1)");
+          g.addColorStop(1, "rgba(0,0,0,0)");
+          c.fillStyle = g;
+          c.fillRect(0, 0, w, h);
+        });
+        c.restore();
+      }
 
       function streamPatch(z, x0, x1, y0, y1, seg){
         const w = (x1 - x0 + 1) * 256, h = (y1 - y0 + 1) * 256;
@@ -1501,7 +1521,11 @@
               }
             }
             done++;
-            if(done % 24 === 0 || done === jobs.length){ ptex.needsUpdate = true; refreshView(); }
+            if(done % 24 === 0 || done === jobs.length){
+              featherEdges(c, cvs.width, cvs.height);
+              ptex.needsUpdate = true;
+              refreshView();
+            }
             pump();
           };
           img.onload = ()=>fin(true);
@@ -1515,13 +1539,22 @@
       /* corridor: Base Camp -> Summit at z16 (~1.2 m/px) */
       streamPatch(16, lon2t(86.840, 16), lon2t(86.940, 16), lat2t(28.016, 16), lat2t(27.952, 16), 220);
 
+      /* the trek waypoints below Base Camp (spots 8-14) sit outside the corridor —
+         give each its own z16 patch (~5 km square), staggered so the network
+         streams them gently in flight order */
+      for(let r = 8; r <= SPOTS; r++){
+        const wp = ROUTE[SPOTS - r];
+        const cx = lon2t(wp.lon, 16), cy = lat2t(wp.lat, 16);
+        setTimeout(()=>streamPatch(16, cx - 4, cx + 3, cy - 4, cy + 3, 128), (r - 8) * 3000);
+      }
+
       /* ultra-res patch (z17, ~0.6 m/px) around a focused waypoint, small LRU */
       const spotPatches = [];
       three.ensureSpotPatch = function(rank){
         if(spotPatches.some(p=>p.rank === rank)) return;
         const wp = ROUTE[SPOTS - rank];
         const cz = 17, cx = lon2t(wp.lon, cz), cy = lat2t(wp.lat, cz);
-        const mesh = streamPatch(cz, cx - 2, cx + 2, cy - 2, cy + 2, 96);
+        const mesh = streamPatch(cz, cx - 3, cx + 3, cy - 3, cy + 3, 128);
         spotPatches.push({ rank, mesh });
         if(spotPatches.length > 5){
           const old = spotPatches.shift();
