@@ -800,8 +800,9 @@
       <a href="https://pmdrf.nchl.com.np/" rel="noopener">Prime Minister Disaster Relief Fund</a>.</span>
   </div>
   <p class="fineprint">TopSummit.lol is an independent project and is not affiliated with,
-    or endorsed by, Save the Children or the Government of Nepal. Donation receipts are
-    published on this page as transfers are made.</p>
+    or endorsed by, Save the Children or the Government of Nepal. Every transfer is
+    posted on this site, with its receipt, in the
+    <a href="#ledger">relief ledger</a> — nothing happens off the record.</p>
 </section>
 
 <!-- THE CLIMB -->
@@ -862,6 +863,39 @@
     <div class="panel" data-reveal>
       <h3>Most clicked <small>flag traffic</small></h3>
       <ul class="feed" id="trafficFeed"><li class="empty">Click counts appear once flags get visitors.</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- RELIEF LEDGER -->
+<section class="board" id="ledger">
+  <div class="sec-head" data-reveal>
+    <span class="pill">Relief ledger</span>
+    <h2>Every dollar, on the record.</h2>
+    <p>50% of everything raised is pledged to Nepal flood relief. TopSummit makes each
+      transfer directly and logs it below with its receipt — in full public view.</p>
+  </div>
+  <div class="board-grid">
+    <div class="panel" data-reveal>
+      <h3>The pledge <small>live reconciliation</small></h3>
+      <div class="kv"><span>Raised on the mountain</span><b id="lgRaised">$0</b></div>
+      <div class="kv"><span>Pledged to relief (50%)</span><b id="lgPledged">$0</b></div>
+      <div class="kv"><span>Transferred so far</span><b id="lgDone">$0</b></div>
+      <div class="kv"><span>Awaiting next transfer</span><b id="lgPending">$0</b></div>
+      <p class="feed empty" style="margin-top:.8rem;font-size:.74rem;color:var(--ice-dim);line-height:1.6">
+        Claims are purchases of advertising, not charitable donations, and are not
+        tax-deductible for sponsors. Donations are made by TopSummit in its own name,
+        crediting the sponsors who funded them.</p>
+    </div>
+    <div class="panel" data-reveal>
+      <h3>Transfer log <small>receipts included</small></h3>
+      <ul class="feed" id="donationFeed"><li class="empty">The first transfer will be
+        logged here with its receipt as soon as it's made.</li></ul>
+    </div>
+    <div class="panel" data-reveal>
+      <h3>Sponsor relief leaderboard <small>who funded it</small></h3>
+      <ul class="feed" id="reliefBoard"><li class="empty">Every claim ever made counts
+        here — even flags that were later swept off the mountain.</li></ul>
     </div>
   </div>
 </section>
@@ -929,6 +963,7 @@
       <h4>The mountain</h4>
       <a href="#top" id="footTop">Claim a spot</a>
       <a href="#board">Live standings</a>
+      <a href="#ledger">Relief ledger</a>
       <a href="#how">How it works</a>
       <a href="#rules">Rules &amp; integrity</a>
       <a href="#cause">The cause</a>
@@ -1277,6 +1312,66 @@
           c.clicks + " clicks", "clicks"));
       });
     }catch(e){ console.warn("board unavailable:", e); }
+    loadLedger();
+  }
+  /* relief ledger: pledge reconciliation, transfer log, sponsor leaderboard */
+  async function loadLedger(){
+    try{
+      const [dRes, lRes] = await Promise.all([
+        fetch(BACKEND.url + "/rest/v1/donations?select=donated_at,amount_usd,recipient,receipt_url,note&order=donated_at.desc", {headers:sbHeaders}),
+        fetch(BACKEND.url + "/rest/v1/relief_leaderboard?select=domain,total_paid,claims&limit=10", {headers:sbHeaders})
+      ]);
+      const donations = dRes.ok ? await dRes.json() : [];
+      const leaders = lRes.ok ? await lRes.json() : [];
+
+      const fmt = n => "$" + (Math.round(n * 100) / 100).toLocaleString("en-US");
+      const pledged = state.raised / 2;
+      const done = donations.reduce((s, d)=>s + Number(d.amount_usd), 0);
+      $("lgRaised").textContent = fmt(state.raised);
+      $("lgPledged").textContent = fmt(pledged);
+      $("lgDone").textContent = fmt(done);
+      $("lgPending").textContent = fmt(Math.max(pledged - done, 0));
+
+      const df = $("donationFeed");
+      if(donations.length){
+        df.innerHTML = "";
+        donations.forEach(d=>{
+          const li = document.createElement("li");
+          const fd = document.createElement("span"); fd.className = "fd";
+          const strong = document.createElement("b");
+          strong.style.color = "#9ADBBB";
+          strong.textContent = d.recipient;
+          const small = document.createElement("small");
+          small.textContent = new Date(d.donated_at + "T00:00:00").toLocaleDateString("en-US",
+            {day:"numeric", month:"short", year:"numeric"}) + (d.note ? " · " + d.note : "");
+          fd.append(strong, small);
+          const right = document.createElement("span");
+          right.className = "amt";
+          right.textContent = fmt(Number(d.amount_usd));
+          li.append(fd, right);
+          if(d.receipt_url){
+            const a = document.createElement("a");
+            a.className = "clicks";
+            a.style.textDecoration = "none";
+            a.href = d.receipt_url; a.target = "_blank"; a.rel = "noopener";
+            a.textContent = "receipt ↗";
+            li.append(a);
+          }
+          df.appendChild(li);
+        });
+      }
+
+      const rb = $("reliefBoard");
+      if(leaders.length){
+        rb.innerHTML = "";
+        leaders.forEach((l, i)=>{
+          const medal = i === 0 ? " 🥇" : i === 1 ? " 🥈" : i === 2 ? " 🥉" : "";
+          rb.appendChild(feedItem(l.domain,
+            `funded ${fmt(l.total_paid / 2)} of relief${medal}`,
+            fmt(l.total_paid), "amt"));
+        });
+      }
+    }catch(e){ console.warn("ledger unavailable:", e); }
   }
   let sessionId = null;
   try{
