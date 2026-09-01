@@ -243,7 +243,9 @@
     text-transform:uppercase;color:var(--cloud);
     background:rgba(6,12,24,.68);backdrop-filter:blur(6px);
     padding:.5rem .95rem;border-radius:999px;
+    cursor:pointer;transition:border-color .2s;border:1px solid transparent;
   }
+  .waypoint:hover{border-color:rgba(191,227,255,.4)}
   .waypoint::before{
     content:"";width:12px;height:12px;border-radius:50%;flex:none;
     background:var(--orange);box-shadow:0 0 0 5px rgba(255,90,31,.25), 0 0 18px rgba(255,90,31,.6);
@@ -620,9 +622,11 @@
     .chip,.ctl{font-size:.7rem;padding:.32rem .6rem}
     .ladder-rail{right:10px;top:20svh;bottom:12svh}
     .camp:nth-child(odd) .camp-inner,.camp:nth-child(even) .camp-inner{margin:0 auto}
-    .flag-card .pennant{display:none}
-    .spot-btn-row{flex-wrap:wrap}
-    .spot-btn-row .spot-view{flex:1;min-width:140px}
+    /* phones: the terrain is the star — only the tappable waypoint chip remains */
+    .camp .flag-card,.camp .spot-btn-row{display:none}
+    .camp-inner{text-align:center}
+    .waypoint{font-size:.68rem;padding:.6rem 1.05rem;border:1px solid rgba(191,227,255,.35)}
+    .waypoint::after{content:"›";font-size:.9rem;margin-left:.15rem;color:var(--orange-lit)}
     .claim-bar{flex-direction:column;align-items:stretch;width:min(420px,100%);
       margin-left:auto;margin-right:auto}
     .claim-bar input,.claim-bar select{min-width:0;width:100%}
@@ -1147,6 +1151,10 @@
     });
     campsEl.querySelectorAll(".spot-view").forEach(btn=>{
       btn.addEventListener("click", ()=>focusSpot(parseInt(btn.dataset.rank, 10)));
+    });
+    /* the waypoint chip itself opens the spot — the only affordance on phones */
+    campsEl.querySelectorAll(".camp").forEach((sec, i)=>{
+      sec.querySelector(".waypoint").addEventListener("click", ()=>focusSpot(SPOTS - i));
     });
 
     /* summit / finale */
