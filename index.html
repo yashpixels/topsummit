@@ -4,22 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>TopSummit.lol — Claim a spot on Everest. Half goes to Nepal flood relief.</title>
-<meta name="description" content="14 sponsor spots up the real Everest route. Prices start at $1. Anyone can cut in for a dollar more. 50% of every claim funds Nepal flood relief.">
+<meta name="description" content="28 sponsor spots up the real Everest route, Lukla to the summit. Prices start at $1. Anyone can cut in for a dollar more. 50% of every claim funds Nepal flood relief.">
 <link rel="canonical" href="https://topsummit.lol/">
 <meta name="theme-color" content="#0B1526">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TopSummit.lol">
 <meta property="og:title" content="TopSummit.lol — The internet's highest ad space">
-<meta property="og:description" content="14 flags on the real Everest. Plant yours from $1; anyone can cut in for $1 more. Half of every dollar goes to Nepal flood relief.">
+<meta property="og:description" content="28 flags on the real Everest. Plant yours from $1; anyone can cut in for $1 more. Half of every dollar goes to Nepal flood relief.">
 <meta property="og:url" content="https://topsummit.lol/">
 <meta property="og:image" content="https://topsummit.lol/assets/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TopSummit.lol — The internet's highest ad space">
-<meta name="twitter:description" content="14 flags on the real Everest. Plant yours from $1; anyone can cut in for $1 more. Half of every dollar goes to Nepal flood relief.">
+<meta name="twitter:description" content="28 flags on the real Everest. Plant yours from $1; anyone can cut in for $1 more. Half of every dollar goes to Nepal flood relief.">
 <meta name="twitter:image" content="https://topsummit.lol/assets/og.jpg">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"TopSummit.lol","url":"https://topsummit.lol/","description":"A 3D flyover of the real Everest route with 14 sponsor spots. 50% of every claim funds Nepal flood relief."}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"TopSummit.lol","url":"https://topsummit.lol/","description":"A 3D flyover of the real Everest route with 28 sponsor spots. 50% of every claim funds Nepal flood relief."}</script>
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/favicon-180.png">
@@ -260,12 +260,12 @@
     text-shadow:0 1px 10px rgba(4,8,16,.9)}
 
   .camp{
-    position:relative;min-height:82svh;
-    display:flex;align-items:center;padding:7svh 1rem;
+    position:relative;min-height:50svh;
+    display:flex;align-items:center;padding:5svh 1rem;
   }
-  /* the upper mountain (spots 6 -> 2) gets more scroll room, so the flight
-     up high is slower and each spot hangs on screen longer */
-  .camp:nth-child(n+9){min-height:130svh}
+  /* the climb (Crampon Point -> Hillary Step) gets more scroll room than the
+     trek, so the flight up high is slower and each spot hangs on screen longer */
+  .camp:nth-child(n+15){min-height:92svh}
   .camp:nth-child(odd) .camp-inner{margin-left:auto;margin-right:max(4vw,calc(50vw - 620px))}
   .camp:nth-child(even) .camp-inner{margin-right:auto;margin-left:max(4vw,calc(50vw - 620px))}
   .camp-inner{width:min(520px,94vw);position:relative}
@@ -852,7 +852,7 @@
 <div class="hud left" aria-label="Mountain stats">
   <span class="chip live"><span class="num" id="statOnline">–</span>&nbsp;climbing right now</span>
   <span class="chip">👀 <span class="num" id="statVisitors">–</span>&nbsp;total visitors</span>
-  <span class="chip">🚩 <span class="num" id="statFlags">0</span><span class="lbl">&nbsp;of 14 spots claimed</span><span class="short">&nbsp;/ 14</span></span>
+  <span class="chip">🚩 <span class="num" id="statFlags">0</span><span class="lbl">&nbsp;of 28 spots claimed</span><span class="short">&nbsp;/ 28</span></span>
   <span class="chip">💰 <span class="num" id="statClaims">$0</span><span class="lbl">&nbsp;raised so far</span><span class="short">&nbsp;raised</span></span>
   <span class="chip relief">❤️ 50% to Nepal flood relief</span>
 </div>
@@ -886,14 +886,14 @@
     </svg>
     <span class="name">TopSummit<b>.lol</b></span>
   </div>
-  <p class="eyebrow" data-load="2">14 spots · the real Everest route · for Nepal</p>
+  <p class="eyebrow" data-load="2">28 spots · the real Everest route · for Nepal</p>
   <h1>
     <span data-load="3">Claim the summit</span><br>
     <span data-load="4">of <em>Everest</em> for <span class="mono" id="summitPrice">$14</span></span>
   </h1>
   <p class="relief-banner" data-load="5">❤️ <span><b>50% of every dollar</b> goes to Save the Children's
     Nepal flood response.</span></p>
-  <p class="subline" data-load="6">Fourteen sponsor spots up the real Khumbu route — plant your SaaS,
+  <p class="subline" data-load="6">Twenty-eight sponsor spots up the real Khumbu route — plant your SaaS,
     your company, your portfolio, your @handle, literally anything you want the
     internet to look up to. Scroll flies the actual terrain.</p>
   <form class="claim-bar" id="claimForm" data-load="7" novalidate>
@@ -908,7 +908,7 @@
     <button class="go" type="submit" id="claimBtn">Claim the summit → $14</button>
   </form>
   <p class="target-line" data-load="8">Targeting: <b id="targetName">The Summit · 29,032 ft</b></p>
-  <p class="micro" data-load="9">Spots start at $1 (Lukla) up to $14 (the summit). Any spot can be
+  <p class="micro" data-load="9">Spots start at $1 (Lukla to Base Camp) and climb to $14 (the summit). Any spot can be
     cut: pay $1 more than its holder and take their place — they slide one camp down, and the
     bottom flag gets swept back to Kathmandu. Payments handled by Dodo Payments.</p>
   <p class="form-error" id="formError" role="alert"></p>
@@ -941,7 +941,7 @@
 <main class="climb">
   <div class="climb-intro" data-reveal>
     <h2>From the teahouse to the top.</h2>
-    <p>Fourteen real waypoints, fourteen flags. Every cut costs a dollar more than the last —
+    <p>Twenty-eight real waypoints, twenty-eight flags. Every cut costs a dollar more than the last —
       and half of it goes down the valley to people who need it.</p>
   </div>
   <div id="camps"><!-- rendered by JS --></div>
@@ -985,7 +985,7 @@
       </div>
       <button class="champ-take" id="champTake">Take #1 → $14</button>
       <div class="kv"><span>Mountain pot</span><b id="boardPot">$0</b></div>
-      <div class="kv"><span>Flags on the route</span><b id="boardContenders">0 / 14</b></div>
+      <div class="kv"><span>Flags on the route</span><b id="boardContenders">0 / 28</b></div>
       <div class="kv"><span>Total visitors</span><b id="boardVisitors">–</b></div>
     </div>
     <div class="panel" data-reveal>
@@ -1037,7 +1037,7 @@
   <div class="sec-head" data-reveal>
     <span class="pill">Transparent mechanics</span>
     <h2>How TopSummit works.</h2>
-    <p>Fourteen spots. One dollar to start. Half of everything goes down the valley.</p>
+    <p>Twenty-eight spots. One dollar to start. Half of everything goes down the valley.</p>
   </div>
   <div class="steps">
     <div class="step" data-reveal><span class="n">01</span><span class="ic">🌐</span>
@@ -1047,7 +1047,7 @@
         pick any waypoint from Lukla Airstrip to the summit itself.</p></div>
     <div class="step" data-reveal><span class="n">02</span><span class="ic">💵</span>
       <h3>Pay the spot price</h3>
-      <p>Open spots cost their base price: $1 at the bottom, $14 at the top. Checkout is
+      <p>Open spots cost their base price: $1 anywhere from Lukla to Base Camp, then $2 to $14 up the climb. Checkout is
         handled by Dodo Payments — cards, wallets, and UPI. Prices are tax-inclusive.</p></div>
     <div class="step" data-reveal><span class="n">03</span><span class="ic">🪓</span>
       <h3>Cut anyone for $1 more</h3>
@@ -1073,9 +1073,9 @@
     </div>
     <ul class="checklist">
       <li class="cl-title">Summary checklist</li>
-      <li>Fourteen spots, base-priced $1 (Lukla) to $14 (the Summit). No free listings.</li>
+      <li>Twenty-eight spots: $1 from Lukla up to Base Camp, then $2 (Khumbu Icefall) to $14 (the Summit). No free listings.</li>
       <li>Cutting a held spot always costs its holder's price plus exactly $1.</li>
-      <li>Cut flags slide one waypoint down; the rank-14 flag is swept off the mountain.</li>
+      <li>Cut flags slide one waypoint down; the rank-28 flag is swept off the mountain.</li>
       <li>Cuts are part of the game and are not refunded — they raise more for relief.</li>
       <li>Flags plant only after the payment webhook verifies — no payment, no flag.</li>
       <li>50% of gross claims go to Nepal flood relief; receipts are published here.</li>
@@ -1087,7 +1087,7 @@
   <div class="footgrid">
     <div>
       <h4>TopSummit.lol</h4>
-      <p>The internet's highest ad space — 14 sponsor spots on a 3D flyover of the real
+      <p>The internet's highest ad space — 28 sponsor spots on a 3D flyover of the real
         Everest route, raising money for Nepal flood relief with every claim.</p>
       <span class="dodoline">🛡️ Payments verified by Dodo Payments</span>
     </div>
@@ -1139,6 +1139,9 @@
      and shrink the flag sprites so a card never outgrows the screen */
   function fovFor(){ const a = innerWidth / innerHeight; return a < 1 ? 55 + (1 - a) * 40 : 55; }
   function spriteK(){ return innerWidth < innerHeight ? 0.8 : 1; }
+  /* summit card largest; South Summit + Hillary Step sit within 400 m of it,
+     so they fly smaller flags to keep the ridge readable */
+  function flagBase(rank){ return rank === 1 ? 1050 : rank <= 3 ? 560 : rank <= 13 ? 640 : 760; }
   if(navigator.maxTouchPoints > 1){
     document.getElementById("focusHint").textContent =
       "Drag to look around · pinch to zoom · it slowly circles on its own.";
@@ -1165,44 +1168,74 @@
 
   /* ---------- the route: 14 waypoints, Khumbu trek + South Col route (approximate) ---------- */
   const ROUTE = [
-    {name:"Lukla Airstrip",       lon:86.7278, lat:27.6857, alt:2860,  ft:"9,383"},
-    {name:"Namche Bazaar",        lon:86.7140, lat:27.8069, alt:3440,  ft:"11,286"},
-    {name:"Tengboche",            lon:86.7646, lat:27.8361, alt:3867,  ft:"12,687"},
-    {name:"Dingboche",            lon:86.8314, lat:27.8925, alt:4410,  ft:"14,470"},
-    {name:"Thukla",               lon:86.8250, lat:27.9200, alt:4620,  ft:"15,157"},
-    {name:"Lobuche",              lon:86.8100, lat:27.9486, alt:4940,  ft:"16,210"},
-    {name:"Gorak Shep",           lon:86.8286, lat:27.9817, alt:5164,  ft:"16,942"},
-    {name:"Everest Base Camp",    lon:86.8528, lat:28.0026, alt:5364,  ft:"17,598"},
-    {name:"Camp I · Icefall Top", lon:86.8770, lat:27.9990, alt:6065,  ft:"19,900"},
-    {name:"Camp II · Western Cwm",lon:86.8987, lat:27.9836, alt:6400,  ft:"21,000"},
-    {name:"Camp III · Lhotse Face",lon:86.9180,lat:27.9700, alt:7160,  ft:"23,500"},
-    {name:"Camp IV · South Col",  lon:86.9298, lat:27.9735, alt:7950,  ft:"26,085"},
-    {name:"The Balcony",          lon:86.9280, lat:27.9800, alt:8400,  ft:"27,600"},
-    {name:"The Summit",           lon:86.9250, lat:27.9881, alt:8849,  ft:"29,032"}
+    {name:"Lukla Airstrip",        lon:86.7278, lat:27.6857, alt:2860,  ft:"9,383"},
+    {name:"Phakding",              lon:86.7128, lat:27.7420, alt:2610,  ft:"8,563"},
+    {name:"Monjo",                 lon:86.7210, lat:27.7745, alt:2835,  ft:"9,301"},
+    {name:"Namche Bazaar",         lon:86.7140, lat:27.8069, alt:3440,  ft:"11,286"},
+    {name:"Khumjung",              lon:86.7230, lat:27.8215, alt:3790,  ft:"12,434"},
+    {name:"Tengboche",             lon:86.7646, lat:27.8361, alt:3867,  ft:"12,687"},
+    {name:"Pangboche",             lon:86.7940, lat:27.8575, alt:3985,  ft:"13,074"},
+    {name:"Dingboche",             lon:86.8314, lat:27.8925, alt:4410,  ft:"14,470"},
+    {name:"Pheriche",              lon:86.8190, lat:27.8950, alt:4371,  ft:"14,340"},
+    {name:"Thukla Pass",           lon:86.8250, lat:27.9200, alt:4620,  ft:"15,157"},
+    {name:"Lobuche",               lon:86.8100, lat:27.9486, alt:4940,  ft:"16,210"},
+    {name:"Gorak Shep",            lon:86.8286, lat:27.9817, alt:5164,  ft:"16,942"},
+    {name:"Kala Patthar",          lon:86.8283, lat:27.9959, alt:5644,  ft:"18,517"},
+    {name:"Everest Base Camp",     lon:86.8528, lat:28.0026, alt:5364,  ft:"17,598"},
+    {name:"Crampon Point",         lon:86.8640, lat:28.0030, alt:5450,  ft:"17,880"},
+    {name:"Khumbu Icefall",        lon:86.8700, lat:28.0010, alt:5700,  ft:"18,700"},
+    {name:"Camp I",                lon:86.8770, lat:27.9990, alt:6065,  ft:"19,900"},
+    {name:"Western Cwm",           lon:86.8880, lat:27.9910, alt:6250,  ft:"20,505"},
+    {name:"Camp II · Advanced Base",lon:86.8987, lat:27.9836, alt:6400,  ft:"21,000"},
+    {name:"The Bergschrund",       lon:86.9080, lat:27.9770, alt:6700,  ft:"21,980"},
+    {name:"Camp III · Lhotse Face",lon:86.9180, lat:27.9700, alt:7160,  ft:"23,500"},
+    {name:"Yellow Band",           lon:86.9230, lat:27.9712, alt:7500,  ft:"24,600"},
+    {name:"Geneva Spur",           lon:86.9275, lat:27.9722, alt:7800,  ft:"25,590"},
+    {name:"Camp IV · South Col",   lon:86.9298, lat:27.9735, alt:7950,  ft:"26,085"},
+    {name:"The Balcony",           lon:86.9280, lat:27.9800, alt:8400,  ft:"27,600"},
+    {name:"South Summit",          lon:86.9266, lat:27.9842, alt:8749,  ft:"28,704"},
+    {name:"Hillary Step",          lon:86.9257, lat:27.9866, alt:8790,  ft:"28,839"},
+    {name:"The Summit",            lon:86.9250, lat:27.9881, alt:8849,  ft:"29,032"}
   ];
-  const SPOTS = ROUTE.length;                     /* 14 */
+  const SPOTS = ROUTE.length;                     /* 28 */
   const FT_MIN = 9383, FT_MAX = 29032;
   /* one piece of real mountain knowledge per waypoint (indexes match ROUTE) */
   const WAYPOINT_INFO = [
     "Gateway to Everest. Tenzing-Hillary Airport's short, sloped runway ends at a mountain wall on one side and a 600-metre drop on the other — one of the most dramatic commercial landings on Earth. Nearly every expedition starts here.",
+    "A riverside village at 2,610 m on the Dudh Koshi, the usual first night out of Lukla. The trail crosses the river on long suspension bridges strung with prayer flags — the first real taste of the Khumbu.",
+    "The gateway to Sagarmatha National Park at 2,835 m, where permits are checked before the trail drops to the river and begins the long, steep climb to Namche.",
     "The Sherpa capital: a horseshoe-shaped market town carved into the hillside at 3,440 m. Climbers pause here for days to acclimatize, and its Saturday market has supplied expeditions since the 1950s.",
+    "A Sherpa village at 3,790 m beneath the sacred peak Khumbila, home to the school Edmund Hillary founded in 1961 and a monastery that keeps a reputed yeti scalp.",
     "Home of the Khumbu's most important Buddhist monastery, rebuilt after a fire in 1989. Expeditions traditionally stop for a blessing from the lama here before heading into the high mountains.",
-    "A summer farming village at 4,410 m, its stone-walled fields among the highest cultivated land in the world. The classic second acclimatization stop, with Ama Dablam towering across the valley.",
-    "A tiny cluster of teahouses below the Khumbu Glacier's moraine. On the ridge above stand rows of memorial chortens honouring climbers and Sherpas who died on Everest.",
+    "The highest year-round Sherpa village at 3,985 m, with the Khumbu's oldest monastery — over 300 years old. Ama Dablam towers directly across the valley.",
+    "A summer farming village at 4,410 m, its stone-walled fields among the highest cultivated land in the world. The classic second acclimatization stop, with Ama Dablam, Lhotse and Island Peak in view.",
+    "A windswept yak-grazing valley at 4,371 m. Its clinic, run by the Himalayan Rescue Association, has treated altitude sickness in trekkers and climbers since 1973.",
+    "A tiny cluster of teahouses below the Khumbu Glacier's moraine. On the ridge above stand rows of memorial chortens honouring climbers and Sherpas who died on Everest, including Scott Fischer and Babu Chiri Sherpa.",
     "A huddle of lodges at 4,940 m beside the glacier. Nights here deliver the first taste of serious altitude — the air holds barely half the oxygen of sea level.",
     "The last inhabited place on the route: a frozen lakebed at 5,164 m with a handful of teahouses. Beyond here it's moraine, ice, and rock all the way to Base Camp.",
-    "A temporary city rebuilt every spring on the slowly-moving Khumbu Glacier. Climbers live here for weeks, rotating up and down the mountain to let their bodies adapt before a summit push.",
-    "Perched above the Khumbu Icefall — a shifting maze of seracs and crevasses crossed on aluminium ladders, usually before dawn while the ice is still frozen in place.",
-    "In the Western Cwm, the 'Valley of Silence': a windless glacial basin that can roast climbers by day and freeze them by night. Most expeditions run it as their advanced base.",
-    "Cut into the hard blue ice of the Lhotse Face at ~7,160 m, where climbers stay clipped to fixed ropes for every step. Many begin breathing supplemental oxygen here.",
-    "The wind-scoured saddle between Everest and Lhotse at 7,950 m — the doorstep of the death zone, where the body can no longer recover and summit pushes launch near midnight.",
-    "A small ledge at ~8,400 m where climbers swap oxygen bottles at dawn and catch their first view of the summit ridge. The last 450 vertical metres take most people four to six hours.",
+    "A 5,644 m rocky knoll above Gorak Shep and the most famous viewpoint on the trek. From here — not from Base Camp — trekkers actually see Everest's summit pyramid.",
+    "A temporary city rebuilt every spring on the slowly-moving Khumbu Glacier. Climbers live here for weeks, rotating up and down the mountain to let their bodies adapt.",
+    "The rocky edge of Base Camp where climbers strap on crampons and clip in before stepping onto the glacier — the true start of the climb, usually in the dark around 3 a.m.",
+    "A tumbling cascade of house-sized ice blocks moving about a metre a day. 'Icefall doctors' fix ladders across its crevasses each season; it is the most dangerous stretch of the standard route.",
+    "Perched above the Khumbu Icefall at 6,065 m — a shifting maze of seracs and crevasses crossed on aluminium ladders, usually before dawn while the ice is still frozen hard.",
+    "The 'Valley of Silence': a broad, windless glacial basin between Everest, Lhotse and Nuptse. Trapped sunlight can push it to 35 °C by day, then it freezes hard at night.",
+    "Advanced Base Camp at 6,400 m, tucked on the moraine at the head of the Cwm. Most expeditions make it their high-altitude home for the summit push, with a kitchen and mess tents.",
+    "The deep crevasse where the Cwm's glacier tears away from the foot of the Lhotse Face at ~6,700 m. Crossing it marks the switch from walking to climbing on fixed ropes.",
+    "Cut into the hard blue ice of the Lhotse Face at ~7,160 m, where climbers stay clipped to fixed ropes for every step. Many begin breathing supplemental oxygen from here.",
+    "A distinctive stripe of yellow-brown marble and limestone at ~7,500 m — ancient seafloor lifted five miles into the sky. Fixed ropes lead climbers up its exposed slabs.",
+    "A black rock rib at ~7,800 m named by the 1952 Swiss expedition. Climbers traverse its crest on fixed lines to reach the South Col — the last obstacle before the death zone.",
+    "The wind-scoured saddle between Everest and Lhotse at 7,950 m — the doorstep of the death zone, where the body can no longer recover and summit pushes launch around midnight.",
+    "A small ledge at ~8,400 m where climbers swap oxygen bottles at dawn and catch their first view of the summit ridge. The last 450 vertical metres take most of the morning.",
+    "A snow dome at 8,749 m, just 100 m below the true top. From here climbers first see the knife-edge summit ridge and the Hillary Step — and many turn around.",
+    "The famous 12-metre rock step at ~8,790 m, first climbed by Hillary and Tenzing in 1953. Since the 2015 earthquake it has largely collapsed into a snow slope, but it is still the last real obstacle.",
     "The roof of the world: 8,849 m — 29,032 ft. The jet stream hammers it for most of the year, the air carries a third of sea-level oxygen, and climbers usually get only minutes on top."
   ];
-  const wpForRank = r => ROUTE[SPOTS - r];        /* rank 1 = summit ... rank 14 = Lukla */
-  const basePrice = r => SPOTS + 1 - r;           /* summit $14 ... Lukla $1 */
+  const wpForRank = r => ROUTE[SPOTS - r];        /* rank 1 = summit ... rank 28 = Lukla */
+  /* ranks 28..14 (Lukla up to Crampon Point) open at $1; the climb runs $2 at the
+     Khumbu Icefall (rank 13) up to $14 at the Summit (rank 1) */
+  const basePrice = r => r >= 14 ? 1 : 15 - r;
 
-  /* ---------- state: 14 spots, all open at launch ---------- */
+  /* ---------- state: 28 spots ---------- */
   let state;
   try{ state = JSON.parse(localStorage.getItem("topsummit-state-v2")) || null; }catch(e){ state = null; }
   if(!state || !Array.isArray(state.spots) || state.spots.length !== SPOTS){
@@ -1927,13 +1960,13 @@
       /* corridor: Base Camp -> Summit at z16 (~1.2 m/px) */
       streamPatch(16, lon2t(86.840, 16), lon2t(86.940, 16), lat2t(28.016, 16), lat2t(27.952, 16), MOBILE ? 150 : 220, 1);
 
-      /* the trek waypoints below Base Camp (spots 8-14) sit outside the corridor —
-         give each its own z16 patch (~5 km square), staggered so the network
+      /* the trek waypoints below Base Camp (spots 14-28) sit outside the corridor —
+         give each its own z16 patch (~3.6 km square), staggered so the network
          streams them gently in flight order */
-      for(let r = 8; r <= SPOTS; r++){
+      for(let r = 14; r <= SPOTS; r++){
         const wp = ROUTE[SPOTS - r];
         const cx = lon2t(wp.lon, 16), cy = lat2t(wp.lat, 16);
-        setTimeout(()=>streamPatch(16, cx - 4, cx + 3, cy - 4, cy + 3, MOBILE ? 96 : 128, 1), (r - 8) * 3000);
+        setTimeout(()=>streamPatch(16, cx - 3, cx + 2, cy - 3, cy + 2, MOBILE ? 96 : 128, 1), (r - 14) * 2500);
       }
 
       /* ultra-res patch (z17, ~0.6 m/px) around a focused waypoint, small LRU */
@@ -1962,7 +1995,7 @@
         renderer.setSize(innerWidth, innerHeight);
         /* orientation flips change the sprite budget too */
         if(three && three.flagGroup) three.flagGroup.children.forEach(sp=>{
-          const s = (sp.userData.rank === 1 ? 1050 : 760) * spriteK();
+          const s = flagBase(sp.userData.rank) * spriteK();
           sp.scale.set(s, s/2, 1);
         });
         if(terrainOn) renderTerrain();
@@ -2078,9 +2111,10 @@
       const spot = state.spots[r-1];
       const w = wpForRank(r);
       const l = toLocal(w.lon, w.lat);
-      const y = Math.max(w.alt, three.heightAt(w.lon, w.lat)) + (r === 1 ? 220 : 150);
+      /* staggered pole heights so the tightly-packed climb flags don't hide each other */
+      const y = Math.max(w.alt, three.heightAt(w.lon, w.lat)) + (r === 1 ? 220 : 150 + (r % 3) * 110);
       const sp = flagSprite(spot, r);
-      const s = (r === 1 ? 1050 : 760) * spriteK();
+      const s = flagBase(r) * spriteK();
       sp.scale.set(s, s/2, 1);
       sp.position.set(l.x, y, l.z);
       sp.userData.rank = r;
@@ -2091,7 +2125,7 @@
     if(focus) g.children.forEach(ch=>{ ch.visible = ch.userData.rank === focus.rank; });
     if(terrainOn) renderTerrain();
   }
-  /* card progress r (0..1, linear across the 14 spots) -> arc fraction u */
+  /* card progress r (0..1, linear across the 28 spots) -> arc fraction u */
   function routeU(r){
     if(!three || !three.wpU) return r;
     const n = SPOTS - 1;
@@ -2153,7 +2187,7 @@
     const cam = three.camera;
     const halfW = Math.tan(cam.fov * Math.PI / 360) * cam.aspect;
     three.flagGroup.children.forEach(sp=>{
-      const base = (sp.userData.rank === 1 ? 1050 : 760) * spriteK();
+      const base = flagBase(sp.userData.rank) * spriteK();
       const d = sp.position.distanceTo(cam.position);
       const want = 2 * d * halfW * 0.26;
       const s = Math.min(Math.max(base, want), base * 3);
@@ -2218,7 +2252,7 @@
     /* only the chosen flag stays in the scene */
     if(three.flagGroup) three.flagGroup.children.forEach(ch=>{
       ch.visible = ch.userData.rank === rank;
-      const s = (ch.userData.rank === 1 ? 1050 : 760) * spriteK();
+      const s = flagBase(ch.userData.rank) * spriteK();
       ch.scale.set(s, s/2, 1);
     });
     /* stream an ultra-res satellite patch around this waypoint */
@@ -2477,7 +2511,7 @@
     const vh = innerHeight;
     const pts = [{ y: 0, t: 0 }];
     document.querySelectorAll(".camp").forEach((sec, i)=>{
-      /* first camp section is rank 14 = Lukla = route index 0 ... rank 2 = index 12;
+      /* first camp section is rank 28 = Lukla = route index 0 ... rank 2 = index 26;
          the finale (summit) is index 13. The camera holds Lukla until the first
          camp card is centred, then climbs waypoint by waypoint with the cards. */
       const yTop = sec.getBoundingClientRect().top + window.scrollY;
