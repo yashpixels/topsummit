@@ -2118,6 +2118,7 @@
       const s = flagBase(r) * spriteK();
       sp.scale.set(s, s/2, 1);
       sp.position.set(l.x, y, l.z);
+      sp.userData.base = sp.position.clone();
       sp.userData.rank = r;
       g.add(sp);
     }
@@ -2195,11 +2196,61 @@
       sp.scale.set(s, s/2, 1);
     });
   }
+  /* the summit ridge packs three flags (South Summit, Hillary Step, Summit)
+     into ~450 m — from the flight path their cards would stack. Each frame,
+     a lower-ranked ridge flag that would cover a higher one slides sideways
+     along the ridge until its card is clear, so the summit is never hidden. */
+  const _ndc = new THREE.Vector3(), _right = new THREE.Vector3();
+  function separateRidgeFlags(){
+    if(!three || !three.flagGroup) return;
+    const cam = three.camera;
+    const flags = three.flagGroup.children
+      .filter(sp=>sp.visible && sp.userData.rank <= 4 && sp.userData.base)
+      .sort((a, b)=>a.userData.rank - b.userData.rank);
+    if(flags.length < 2) return;
+    _right.set(1, 0, 0).applyQuaternion(cam.quaternion); _right.y = 0; _right.normalize();
+    const tanH = Math.tan(cam.fov * Math.PI / 360);
+    const rectOf = sp=>{
+      const d = sp.position.distanceTo(cam.position);
+      const halfH = d * tanH;                       /* world half-height at that depth */
+      _ndc.copy(sp.position).project(cam);
+      return { x:_ndc.x, y:_ndc.y, z:_ndc.z, hw:(sp.scale.x / 2) / (halfH * cam.aspect),
+               hh:(sp.scale.y / 2) / halfH, halfH, d };
+    };
+    const placed = [];
+    flags.forEach((sp, i)=>{
+      sp.position.copy(sp.userData.base);
+      let r = rectOf(sp);
+      if(r.z > 1 || r.z < -1){ return; }              /* behind the camera: leave it */
+      const overlaps = q => placed.find(p=>Math.abs(p.x - q.x) < p.hw + q.hw + 0.015 && Math.abs(p.y - q.y) < p.hh + q.hh);
+      if(overlaps(r)){
+        /* try sliding left and right; keep whichever clears every neighbour with
+           the shorter move (in NDC), so flags never ping-pong between two cards */
+        let best = null;
+        for(const dir of [1, -1]){
+          let q = { ...r }, moved = 0;
+          for(let k = 0; k < 6; k++){
+            const hit = overlaps(q);
+            if(!hit) break;
+            const need = (hit.hw + q.hw + 0.02) - dir * (q.x - hit.x);
+            q.x += dir * need; moved += need;
+          }
+          if(!overlaps(q) && (best === null || moved < best.moved)) best = { dir, moved };
+        }
+        if(best){
+          sp.position.addScaledVector(_right, best.dir * best.moved * r.halfH * cam.aspect);
+          r = rectOf(sp);
+        }
+      }
+      placed.push(r);
+    });
+  }
   function renderTerrain(){
     if(!three) return;
     if(focus){ renderFocusFrame(); return; }
     cameraAt(lastT);
     fitFlagScales();
+    separateRidgeFlags();
     three.renderer.render(three.scene, three.camera);
   }
 
@@ -2253,6 +2304,7 @@
     /* only the chosen flag stays in the scene */
     if(three.flagGroup) three.flagGroup.children.forEach(ch=>{
       ch.visible = ch.userData.rank === rank;
+      if(ch.userData.base) ch.position.copy(ch.userData.base);
       const s = flagBase(ch.userData.rank) * spriteK();
       ch.scale.set(s, s/2, 1);
     });
