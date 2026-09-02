@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>TopSummit.lol — Claim a spot on Everest. Half goes to Nepal flood relief.</title>
 <meta name="description" content="14 sponsor spots up the real Everest route. Prices start at $1. Anyone can cut in for a dollar more. 50% of every claim funds Nepal flood relief.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
@@ -32,7 +32,6 @@
     font-family:"Archivo",system-ui,sans-serif;
     background:var(--night-deep);
     color:var(--cloud);
-    overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
   }
   button{font-family:inherit;cursor:pointer}
@@ -94,6 +93,7 @@
     backdrop-filter:blur(8px);
   }
   .chip .num{font-family:"IBM Plex Mono",monospace;color:var(--ice);font-weight:600}
+  .chip .short{display:none}
   .chip.relief{border-color:rgba(76,195,138,.45);color:#9ADBBB}
   .ctl{transition:color .2s,border-color .2s}
   .ctl:hover{color:var(--cloud);border-color:var(--ice)}
@@ -246,6 +246,7 @@
     cursor:pointer;transition:border-color .2s;border:1px solid transparent;
   }
   .waypoint:hover{border-color:rgba(191,227,255,.4)}
+  .wp-name::after{content:" ·"}
   .waypoint::before{
     content:"";width:12px;height:12px;border-radius:50%;flex:none;
     background:var(--orange);box-shadow:0 0 0 5px rgba(255,90,31,.25), 0 0 18px rgba(255,90,31,.6);
@@ -616,38 +617,103 @@
     .rules-card{grid-template-columns:1fr;padding:2rem 1.5rem}
   }
   body.focus-active{touch-action:none} /* touch drags orbit the camera, not the page */
-  @media (max-width:820px){
-    .hud.left{display:none}
-    .hud.right{top:10px;right:10px;gap:.3rem}
-    .chip,.ctl{font-size:.7rem;padding:.32rem .6rem}
-    .ladder-rail{right:10px;top:20svh;bottom:12svh}
-    .camp:nth-child(odd) .camp-inner,.camp:nth-child(even) .camp-inner{margin:0 auto}
-    /* phones: the terrain is the star — only the tappable waypoint chip remains */
-    .camp .flag-card,.camp .spot-btn-row{display:none}
-    .camp-inner{text-align:center}
-    .waypoint{font-size:.68rem;padding:.6rem 1.05rem;border:1px solid rgba(191,227,255,.35)}
-    .waypoint::after{content:"›";font-size:.9rem;margin-left:.15rem;color:var(--orange-lit)}
+  @media (max-width:820px), (pointer:coarse) and (max-height:520px){
+    :root{--card:rgba(10,20,38,.9)}
+    /* blur over a live WebGL canvas is the single biggest frame-rate cost on
+       phones — flat, slightly denser scrims instead */
+    .eyebrow,.subline,.micro,.target-line,.scroll-cue,.chip,.ctl,.waypoint,
+    .relief-banner,.flag-card,.spot-btn,.spot-view,.summit-card,.focus-panel,
+    .claim-bar input,.claim-bar select,.cause{backdrop-filter:none}
+    .subline,.target-line,.scroll-cue,.micro{background:rgba(6,12,24,.76)}
+    .relief-banner{background:rgba(14,40,30,.88)}
+    .focus-panel{background:rgba(8,15,29,.95)}
+    .cause{background:rgba(6,12,24,.8)}
+
+    /* HUD: one thumb-height row — live stats left, controls right */
+    .hud{top:max(10px,env(safe-area-inset-top))}
+    .hud.left{left:10px;flex-direction:row;gap:.3rem}
+    .hud.left .chip{display:none}
+    .hud.left .chip:nth-child(3),.hud.left .chip:nth-child(4){display:inline-flex}
+    .hud.right{right:10px;flex-direction:row;gap:.3rem}
+    #modeChip{display:none}
+    .chip,.ctl{font-size:.68rem;padding:0 .6rem;height:36px}
+    .ctl{min-width:36px;justify-content:center;padding:0 .55rem}
+    .ctl .lbl,.chip .lbl{display:none}
+    .chip .short{display:inline}
+
+    /* altimeter rail hugs the edge and reads vertically, clear of the content */
+    .ladder-rail{right:5px;top:22svh;bottom:15svh;width:22px}
+    .ladder{width:22px;height:54px}
+    .ladder .rail.r1{left:2px}.ladder .rail.r2{right:2px}
+    .ladder .rung{left:2px;right:2px}
+    .altimeter{right:auto;left:50%;bottom:64px;transform:translateX(-50%);
+      writing-mode:vertical-rl;font-size:.6rem;letter-spacing:.06em}
+
+    /* hero: one screen, mountain first */
+    .hero{min-height:100svh;justify-content:center;
+      padding:calc(58px + env(safe-area-inset-top)) 2rem 6svh 1rem}
+    .eyebrow{display:none}
+    .brandline{margin-bottom:.8rem}
+    .relief-banner{flex-wrap:nowrap;text-align:left;font-size:.82rem;padding:.5rem .9rem;margin-top:1rem}
+    .subline{font-size:.92rem;line-height:1.55;padding:.7rem .9rem;margin-top:.9rem}
+    .micro{display:none}
     .claim-bar{flex-direction:column;align-items:stretch;width:min(420px,100%);
-      margin-left:auto;margin-right:auto}
-    .claim-bar input,.claim-bar select{min-width:0;width:100%}
+      margin:1.1rem auto .4rem}
+    .claim-bar input,.claim-bar select{min-width:0;width:100%;height:46px;font-size:16px}
     .claim-bar .go{width:100%;justify-content:center}
-    .board,.howit,.rules{padding-left:1rem;padding-right:1rem}
+    .target-line{font-size:.64rem;letter-spacing:.1em}
+    .form-error{min-height:0;margin-top:0}
+    .scroll-cue{position:static;transform:none;margin-top:1.2rem}
+
+    /* camps: the terrain is the star — a tappable waypoint chip rides the
+       lower third of the screen while the flag flies above it */
+    .camp{display:block;padding:0 2rem 0 1rem}
+    .camp:nth-child(odd) .camp-inner,.camp:nth-child(even) .camp-inner{margin:0 auto}
+    .camp-inner{position:sticky;top:68svh;width:100%;text-align:center}
+    .camp .flag-card,.camp .spot-btn-row{display:none}
+    .waypoint{flex-direction:column;align-items:center;gap:.1rem;margin:0;
+      min-height:48px;padding:.55rem 1.15rem .5rem;max-width:100%;
+      font-size:.62rem;letter-spacing:.14em;
+      border:1px solid rgba(191,227,255,.35);background:rgba(6,12,24,.84)}
+    .waypoint::before{display:none}
+    .wp-name{font-size:.74rem;color:var(--cloud)}
+    .wp-name::after{content:none}
+    .wp-meta{color:var(--ice-dim)}
+    .waypoint::after{content:"Tap for the 360° view";font-family:"Archivo",sans-serif;
+      font-size:.62rem;letter-spacing:.02em;text-transform:none;color:var(--orange-lit);
+      margin-top:.15rem}
+
+    /* 360° panel: legible text, thumb-sized controls, no iOS input zoom */
+    .focus-ui{padding:0 .6rem calc(1.2svh + env(safe-area-inset-bottom))}
+    .focus-panel{width:100%;padding:.9rem .95rem .7rem}
+    .focus-close{width:36px;height:36px;font-size:.9rem;top:.55rem;right:.55rem}
+    .focus-way{font-size:.66rem}
+    #focusName{font-size:1.15rem;padding-right:2.4rem}
+    .focus-fact{font-size:.8rem;-webkit-line-clamp:2}
+    .focus-holder{font-size:.8rem}
+    .fs-main a{font-size:1rem}
+    .fs-visit{padding:.7rem .8rem;font-size:.8rem}
+    .focus-sponsor img{width:42px;height:42px}
+    .fs-main p{font-size:.74rem}
+    .fs-stats span{font-size:.58rem}
+    .fs-stats b{font-size:.88rem}
+    .orbit-btn{width:42px;height:42px}
+    .focus-claim{height:44px;font-size:.9rem}
+    .focus-hint{font-size:.68rem}
+    .focus-form input,#focusPay{height:44px;font-size:16px}
+
+    .summit-card{padding:1.8rem 1.2rem 1.5rem}
+    .summit-card .figures{gap:1.2rem}
+    .board,.howit{padding:5svh 1rem}
+    .rules{padding-left:1rem;padding-right:1rem}
+    .rules-card{padding:1.6rem 1.2rem}
+    .sec-head{margin-bottom:1.6rem}
+    .footgrid a{padding:.5rem 0;font-size:.92rem}
+    .basefooter{font-size:.8rem;padding-bottom:calc(8svh + env(safe-area-inset-bottom))}
   }
   @media (max-width:480px){
     h1{font-size:2.15rem}
-    .hero{padding-top:26svh;justify-content:flex-start}
-    .subline{font-size:.94rem}
-    .focus-ui{padding:0 .7rem calc(2svh + env(safe-area-inset-bottom))}
-    .focus-panel{padding:.75rem .85rem .6rem}
-    .focus-fact{-webkit-line-clamp:2}
-    .focus-row{gap:.4rem}
-    .orbit-btn{width:38px;height:38px;font-size:.9rem}
-    .focus-claim{font-size:.82rem}
-    .summit-card{padding:1.8rem 1.2rem 1.5rem}
-    .summit-card .figures{gap:1.2rem}
-    .rules-card{padding:1.6rem 1.2rem}
-    .waypoint{font-size:.6rem;letter-spacing:.16em}
-    .basefooter{font-size:.78rem}
+    .subline{font-size:.9rem}
   }
   @media (prefers-reduced-motion:reduce){
     .chip.live::before{animation:none}
@@ -714,7 +780,7 @@
       <button type="submit" id="focusPay">Pay $1 → plant flag</button>
       <p class="focus-err" id="focusErr" role="alert"></p>
     </form>
-    <p class="focus-hint">Drag any direction to look around · scroll or pinch to zoom · it slowly circles on its own.</p>
+    <p class="focus-hint" id="focusHint">Drag any direction to look around · scroll or pinch to zoom · it slowly circles on its own.</p>
   </div>
 </div>
 
@@ -722,15 +788,15 @@
 <div class="hud left" aria-label="Mountain stats">
   <span class="chip live"><span class="num" id="statOnline">–</span>&nbsp;climbing right now</span>
   <span class="chip">👀 <span class="num" id="statVisitors">–</span>&nbsp;total visitors</span>
-  <span class="chip">🚩 <span class="num" id="statFlags">0</span>&nbsp;of 14 spots claimed</span>
-  <span class="chip">💰 <span class="num" id="statClaims">$0</span>&nbsp;raised so far</span>
+  <span class="chip">🚩 <span class="num" id="statFlags">0</span><span class="lbl">&nbsp;of 14 spots claimed</span><span class="short">&nbsp;/ 14</span></span>
+  <span class="chip">💰 <span class="num" id="statClaims">$0</span><span class="lbl">&nbsp;raised so far</span><span class="short">&nbsp;raised</span></span>
   <span class="chip relief">❤️ 50% to Nepal flood relief</span>
 </div>
 <div class="hud right" aria-label="Controls">
   <button class="ctl" id="modeChip" aria-pressed="false" title="Toggle real-terrain 3D">🏔️ Loading terrain…</button>
-  <button class="ctl" id="ctlWind" aria-pressed="false">🔊 Wind</button>
-  <button class="ctl" id="ctlSnow" aria-pressed="true">❄ Snow</button>
-  <button class="ctl" id="ctlTop">↓ Back to Lukla</button>
+  <button class="ctl" id="ctlWind" aria-pressed="false" aria-label="Wind sound">🔊 <span class="lbl">Wind</span></button>
+  <button class="ctl" id="ctlSnow" aria-pressed="true" aria-label="Snow">❄ <span class="lbl">Snow</span></button>
+  <button class="ctl" id="ctlTop" aria-label="Back to Lukla">↓ <span class="lbl">Back to Lukla</span></button>
 </div>
 
 <div class="ladder-rail" aria-hidden="true">
@@ -1003,6 +1069,14 @@
   /* phone-class device: lighter meshes, fewer pixels, smaller texture cache */
   const MOBILE = matchMedia("(max-width: 820px)").matches ||
     (navigator.maxTouchPoints > 1 && Math.min(innerWidth, innerHeight) < 820);
+  /* portrait phones: widen the field of view so the valley isn't a keyhole,
+     and shrink the flag sprites so a card never outgrows the screen */
+  function fovFor(){ const a = innerWidth / innerHeight; return a < 1 ? 55 + (1 - a) * 40 : 55; }
+  function spriteK(){ return innerWidth < innerHeight ? 0.58 : 1; }
+  if(navigator.maxTouchPoints > 1){
+    document.getElementById("focusHint").textContent =
+      "Drag to look around · pinch to zoom · it slowly circles on its own.";
+  }
 
   /* ---------- live backend (Supabase + Dodo Payments) ---------- */
   const BACKEND = {
@@ -1145,7 +1219,7 @@
       const medal = s && r === 2 ? " 🥈" : s && r === 3 ? " 🥉" : "";
       sec.innerHTML = `
         <div class="camp-inner">
-          <p class="waypoint">${wp.name} · ${wp.ft} ft · spot #${r}${medal}</p>
+          <p class="waypoint"><span class="wp-name">${wp.name}</span><span class="wp-meta">${wp.ft} ft · spot #${r}${medal}</span></p>
           <article class="flag-card">
             <span class="pennant">${s ? pennantSVG(s.domain) : vacantPennant}</span>
             <span class="info">
@@ -1562,7 +1636,7 @@
       $("terrain3d").appendChild(renderer.domElement);
       const scene = new THREE.Scene();
       scene.fog = new THREE.Fog(0x9db9d8, 14000, 90000);
-      const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 20, 120000);
+      const camera = new THREE.PerspectiveCamera(fovFor(), innerWidth/innerHeight, 20, 120000);
 
       const tex = new THREE.Texture(texImg);
       tex.needsUpdate = true;
@@ -1816,9 +1890,15 @@
       renderFlags3D();
 
       addEventListener("resize", ()=>{
+        camera.fov = fovFor();
         camera.aspect = innerWidth/innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(innerWidth, innerHeight);
+        /* orientation flips change the sprite budget too */
+        if(three && three.flagGroup) three.flagGroup.children.forEach(sp=>{
+          const s = (sp.userData.rank === 1 ? 1050 : 760) * spriteK();
+          sp.scale.set(s, s/2, 1);
+        });
         if(terrainOn) renderTerrain();
       });
 
@@ -1934,7 +2014,7 @@
       const l = toLocal(w.lon, w.lat);
       const y = Math.max(w.alt, three.heightAt(w.lon, w.lat)) + (r === 1 ? 220 : 150);
       const sp = flagSprite(spot, r);
-      const s = r === 1 ? 1050 : 760;
+      const s = (r === 1 ? 1050 : 760) * spriteK();
       sp.scale.set(s, s/2, 1);
       sp.position.set(l.x, y, l.z);
       sp.userData.rank = r;
@@ -2020,7 +2100,7 @@
     const idx = SPOTS - rank;
     const wp = ROUTE[idx];
     const s = state.spots[rank - 1];
-    focus = { rank, az: Math.PI * 0.3, el: 0.32, dist: MOBILE ? 2400 : 1500 };
+    focus = { rank, az: Math.PI * 0.3, el: 0.32, dist: innerWidth < innerHeight ? 1700 : (MOBILE ? 2000 : 1500) };
     $("focusWay").textContent = `${wp.ft} ft · spot #${rank}`;
     $("focusName").textContent = wp.name;
     $("focusFact").textContent = WAYPOINT_INFO[idx];
@@ -2435,7 +2515,7 @@
     gsap.timeline({
       scrollTrigger:{ trigger:".finale", start:"top top", end:"+=70%", scrub:0.6, pin:true }
     })
-    .fromTo(".summit-card", {scale:1.13, y:70}, {scale:1, y:0, ease:"power2.out"}, 0)
+    .fromTo(".summit-card", {scale: MOBILE ? 1.04 : 1.13, y:70}, {scale:1, y:0, ease:"power2.out"}, 0)
     .fromTo(".finale .kicker, .finale .steal", {opacity:0}, {opacity:1, ease:"sine.out"}, 0.15);
 
     ScrollTrigger.refresh();
