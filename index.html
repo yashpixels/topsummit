@@ -1142,6 +1142,8 @@
   function spriteK(){ return innerWidth < innerHeight ? 0.8 : 1; }
   /* summit card largest; the Hillary Step sits 170 m below it,
      so they fly smaller flags to keep the ridge readable */
+  /* flag sprites are 4:1 — the card occupies one half, the pole the centre */
+  function setFlagScale(sp, s){ sp.scale.set(2 * s, s / 2, 1); }
   function flagBase(rank){ return rank === 1 ? 900 : rank === 2 ? 500 : rank <= 13 ? 640 : 760; }
   /* pole heights: the ridge flags rise in a clean staircase toward the summit;
      elsewhere neighbours alternate so tight camps don't hide each other */
@@ -2001,8 +2003,7 @@
         renderer.setSize(innerWidth, innerHeight);
         /* orientation flips change the sprite budget too */
         if(three && three.flagGroup) three.flagGroup.children.forEach(sp=>{
-          const s = flagBase(sp.userData.rank) * spriteK();
-          sp.scale.set(s, s/2, 1);
+          setFlagScale(sp, flagBase(sp.userData.rank) * spriteK());
         });
         if(terrainOn) renderTerrain();
       });
@@ -2037,51 +2038,61 @@
     c.closePath();
   }
   function flagSprite(spot, rank){
+    /* 1024x256 canvas: the pole stands at the exact centre (the real spot);
+       even ranks fly their card to the right of the pole, odd ranks to the
+       left, so flags lined up along the trail never cover one another */
     const cvs = document.createElement("canvas");
-    cvs.width = 512; cvs.height = 256;
+    cvs.width = 1024; cvs.height = 256;
     const c = cvs.getContext("2d");
+    const side = rank % 2 === 0 ? 1 : -1;
+    const ox = side > 0 ? 530 : 42;               /* card left edge */
     function draw(logo){
-      c.clearRect(0, 0, 512, 256);
-      c.fillStyle = "#F4F9FF"; c.fillRect(16, 8, 8, 240);   /* pole */
+      c.clearRect(0, 0, 1024, 256);
+      c.fillStyle = "#F4F9FF"; c.fillRect(508, 8, 8, 240);   /* pole */
       if(spot){
         const accent = rank === 1 ? "#F5C64F" : rank === 2 ? "#C9D6E5"
         : rank === 3 ? "#D98443" : `hsl(${hueFor(spot.domain)} 70% 55%)`;
-        roundRect(c, 34, 22, 452, 172, 18);
+        roundRect(c, ox, 22, 452, 172, 18);
         c.fillStyle = "rgba(8,15,29,.95)"; c.fill();
         c.lineWidth = 5; c.strokeStyle = accent; c.stroke();
         /* logo (favicon) in a circle, monogram fallback */
         c.save();
-        c.beginPath(); c.arc(94, 86, 36, 0, 7); c.clip();
+        c.beginPath(); c.arc(ox + 60, 86, 36, 0, 7); c.clip();
         if(logo){
-          c.fillStyle = "#fff"; c.fillRect(58, 50, 72, 72);
-          c.drawImage(logo, 62, 54, 64, 64);
+          c.fillStyle = "#fff"; c.fillRect(ox + 24, 50, 72, 72);
+          c.drawImage(logo, ox + 28, 54, 64, 64);
         }else{
-          c.fillStyle = accent; c.fillRect(58, 50, 72, 72);
+          c.fillStyle = accent; c.fillRect(ox + 24, 50, 72, 72);
           c.fillStyle = "#fff"; c.font = "800 42px Bricolage Grotesque, Arial";
           c.textAlign = "center";
-          c.fillText(spot.domain[0].toUpperCase(), 94, 101);
+          c.fillText(spot.domain[0].toUpperCase(), ox + 60, 101);
           c.textAlign = "left";
         }
         c.restore();
+        c.textAlign = "left";
         c.fillStyle = "#F4F9FF"; c.font = "800 33px Bricolage Grotesque, Arial";
-        c.fillText(truncateText(c, spot.domain, 320), 150, 80);
+        c.fillText(truncateText(c, spot.domain, 320), ox + 116, 80);
         c.fillStyle = "#BFE3FF"; c.font = "400 21px Archivo, Arial";
-        c.fillText(truncateText(c, spot.tag || "", 320), 150, 114);
+        c.fillText(truncateText(c, spot.tag || "", 320), ox + 116, 114);
         c.fillStyle = accent; c.font = "700 26px IBM Plex Mono, monospace";
-        c.fillText(`#${rank} · $${spot.price}`, 150, 168);
+        c.fillText(`#${rank} · $${spot.price}`, ox + 116, 168);
       }else{
-        /* open spot: orange dashed pennant so it reads against snow */
+        /* open spot: orange dashed pennant flying off the pole */
+        const bx = side > 0 ? 526 : 498, tip = side > 0 ? 964 : 60;
         c.strokeStyle = "#FF5A1F"; c.lineWidth = 7; c.setLineDash([16, 11]);
-        c.beginPath(); c.moveTo(30, 26); c.lineTo(468, 86); c.lineTo(30, 150);
+        c.beginPath(); c.moveTo(bx, 26); c.lineTo(tip, 86); c.lineTo(bx, 150);
         c.closePath(); c.stroke();
         c.setLineDash([]);
         c.fillStyle = "rgba(8,15,29,.55)";
-        c.beginPath(); c.moveTo(30, 26); c.lineTo(468, 86); c.lineTo(30, 150);
+        c.beginPath(); c.moveTo(bx, 26); c.lineTo(tip, 86); c.lineTo(bx, 150);
         c.closePath(); c.fill();
+        c.textAlign = side > 0 ? "left" : "right";
+        const tx = side > 0 ? bx + 50 : bx - 50;
         c.fillStyle = "#FF8A5C"; c.font = "800 46px Bricolage Grotesque, Arial";
-        c.fillText("$" + priceFor(rank), 76, 88);
+        c.fillText("$" + priceFor(rank), tx, 88);
         c.font = "700 22px IBM Plex Mono, monospace";
-        c.fillText("OPEN", 76, 124);
+        c.fillText("OPEN", tx, 124);
+        c.textAlign = "left";
       }
     }
     draw(null);
@@ -2120,8 +2131,7 @@
       /* staggered pole heights so the tightly-packed climb flags don't hide each other */
       const y = Math.max(w.alt, three.heightAt(w.lon, w.lat)) + poleFor(r);
       const sp = flagSprite(spot, r);
-      const s = flagBase(r) * spriteK();
-      sp.scale.set(s, s/2, 1);
+      setFlagScale(sp, flagBase(r) * spriteK());
       sp.position.set(l.x, y, l.z);
       sp.userData.base = sp.position.clone();
       sp.userData.rank = r;
@@ -2149,36 +2159,46 @@
     const tangent = curve.getTangentAt(Math.min(t, 0.995)).setY(0).normalize();
     three.lastAltM = target.y;
     setStarOpacity(target.y);
-    /* the summit ridge (Balcony -> Hillary Step -> Summit) runs
-       straight away from the flight path, so seen from behind its four flags stack
-       in depth. Over the last legs the camera swings out to the side of the ridge
-       and pulls back, so the ascent reads as a clear left-to-right staircase. */
+    /* ridge factor still drives the South Col group receding on the last legs */
     const ridge = Math.min(Math.max((t - 0.84) / 0.16, 0), 1);
-    const ease = ridge * ridge * (3 - 2 * ridge);
-    three.ridgeEase = ease;
-    /* pull in tight on the upper mountain: 5.4 km back -> 1.5 km, 1.6 km up -> 450 m */
-    const back = 5400 - t * 3900 + ease * 450;
-    const up = 1600 - t * 1150 + ease * 120;
-    /* gentle swing keeps the camera in the valley rather than behind side ridges */
-    const swing = Math.sin(t * Math.PI * 1.35) * 0.5 + ease * 1.75 + orbitExtra;
-    const off = tangent.clone().multiplyScalar(-back);
-    const cosS = Math.cos(swing), sinS = Math.sin(swing);
-    const ox = off.x * cosS - off.z * sinS;
-    const oz = off.x * sinS + off.z * cosS;
-    const cam = new THREE.Vector3(target.x + ox, target.y + up, target.z + oz);
+    three.ridgeEase = ridge * ridge * (3 - 2 * ridge);
+
+    /* first-person: the camera rides the trail itself, a fixed distance behind
+       the target and low over the ground, always looking along the path — so
+       the flight stays in the valley and the next flag is always ahead */
+    const back = 2600 - t * 1200;      /* 2.6 km behind at Lukla -> 1.4 km at the top */
+    const up = 360 - t * 120;          /* 360 m -> 240 m above the trail */
+    const L = three.curveLen || (three.curveLen = curve.getLength());
+    const uBack = t - back / L;
+    let cam;
+    if(uBack >= 0){
+      cam = curve.getPointAt(uBack);
+    }else{
+      const p0 = curve.getPointAt(0);
+      const t0 = curve.getTangentAt(0).setY(0).normalize();
+      cam = p0.clone().addScaledVector(t0, uBack * L);
+    }
+    /* summit idle: a slow circle around the peak once the flight is over */
+    if(orbitExtra){
+      const dx = cam.x - target.x, dz = cam.z - target.z;
+      const c = Math.cos(orbitExtra), sn = Math.sin(orbitExtra);
+      cam.x = target.x + dx * c - dz * sn;
+      cam.z = target.z + dx * sn + dz * c;
+    }
+    cam.y += up;
     const camLon = LON0 + cam.x / MPERLON, camLat = LAT0 - cam.z / MPERLAT;
-    cam.y = Math.max(cam.y, heightAt(camLon, camLat) + 380);
-    /* line-of-sight: lift the camera until no intervening ridge blocks the target */
+    cam.y = Math.max(cam.y, heightAt(camLon, camLat) + 200);
+    /* line-of-sight: lift the camera only as much as a ridge in the way demands */
     const tgtY = ahead.y + 120;
     for(let k = 1; k <= 6; k++){
       const f = k / 7;
       if(f > 0.85) break;
       const sx = cam.x + (ahead.x - cam.x) * f;
       const sz = cam.z + (ahead.z - cam.z) * f;
-      const ridge = heightAt(LON0 + sx / MPERLON, LAT0 - sz / MPERLAT) + 150;
+      const ridgeH = heightAt(LON0 + sx / MPERLON, LAT0 - sz / MPERLAT) + 120;
       const lineY = cam.y * (1 - f) + tgtY * f;
-      if(lineY < ridge){
-        cam.y = Math.max(cam.y, (ridge - tgtY * f) / (1 - f));
+      if(lineY < ridgeH){
+        cam.y = Math.max(cam.y, (ridgeH - tgtY * f) / (1 - f));
       }
     }
     camera.position.copy(cam);
@@ -2204,11 +2224,11 @@
     three.flagGroup.children.forEach(sp=>{
       const base = flagBase(sp.userData.rank) * spriteK();
       /* the ridge staircase is laid out at exact base sizes — never inflate it */
-      if(ridgeOn && sp.userData.rank <= 3){ sp.scale.set(base, base/2, 1); return; }
+      if(ridgeOn && sp.userData.rank <= 3){ setFlagScale(sp, base); return; }
       const d = sp.position.distanceTo(cam.position);
-      const want = 2 * d * halfW * 0.26;
+      const want = 2 * d * halfW * 0.26;   /* card = half the sprite width */
       const s = Math.min(Math.max(base, want), base * 3);
-      sp.scale.set(s, s/2, 1);
+      setFlagScale(sp, s);
     });
   }
   /* ridge frame: every flag stays on its real spot. While the camera is beside
@@ -2221,9 +2241,26 @@
       if(sp.userData.base) sp.position.copy(sp.userData.base);
       const r = sp.userData.rank;
       if(e > 0.001 && r >= 4 && r <= 7){
-        const b = flagBase(r) * spriteK() * (1 - 0.5 * e);
-        sp.scale.set(b, b/2, 1);
+        setFlagScale(sp, flagBase(r) * spriteK() * (1 - 0.5 * e));
       }
+    });
+  }
+  /* first-person presence: a flag the camera has just passed sits right in the
+     lens and would cover the one ahead, so passed flags fade and shrink over
+     the next leg; flags far ahead soften so the nearest reads on top */
+  function flagPresence(){
+    if(!three || !three.flagGroup) return;
+    const ci = lastT * (SPOTS - 1);              /* route index the camera targets */
+    three.flagGroup.children.forEach(sp=>{
+      const i = SPOTS - sp.userData.rank;
+      const behind = ci - i;
+      let op = 1;
+      if(behind > 0.25) op = 1 - Math.min((behind - 0.25) / 0.9, 1);          /* passed: gone within a leg */
+      else if(behind < -1.0) op = Math.max(0.4, 1 + (behind + 1.0) * 0.6);     /* far ahead: softened */
+      if(behind > 0.25){ const k = 0.45 + 0.55 * op; sp.scale.multiplyScalar(k); }
+      else if(behind < -1.5){ sp.scale.multiplyScalar(0.85); }
+      sp.material.opacity = op;
+      sp.visible = op > 0.02;
     });
   }
   function renderTerrain(){
@@ -2232,6 +2269,7 @@
     cameraAt(lastT);
     fitFlagScales();
     ridgeFrame();
+    flagPresence();
     three.renderer.render(three.scene, three.camera);
   }
 
@@ -2286,8 +2324,8 @@
     if(three.flagGroup) three.flagGroup.children.forEach(ch=>{
       ch.visible = ch.userData.rank === rank;
       if(ch.userData.base) ch.position.copy(ch.userData.base);
-      const s = flagBase(ch.userData.rank) * spriteK();
-      ch.scale.set(s, s/2, 1);
+      ch.material.opacity = 1;
+      setFlagScale(ch, flagBase(ch.userData.rank) * spriteK());
     });
     /* stream an ultra-res satellite patch around this waypoint */
     if(three.ensureSpotPatch) three.ensureSpotPatch(rank);
@@ -2339,7 +2377,7 @@
     setFocusMin(false);
     lockScroll(false);
     document.body.classList.remove("focus-active");
-    if(three && three.flagGroup) three.flagGroup.children.forEach(ch=>{ ch.visible = true; });
+    if(three && three.flagGroup) three.flagGroup.children.forEach(ch=>{ ch.visible = true; ch.material.opacity = 1; });
     applyProgress(lastT);   /* hand sky + camera back to the scroll position */
   }
   function renderFocusFrame(){
@@ -2757,6 +2795,33 @@
 
   /* debug/tuning hooks: preview the camera at any progress 0..1 from the console */
   window.__setProgress = applyProgress;
+  /* audit probe: for a route progress r, how first-person is the shot? */
+  window.__probe = (r) => {
+    if(!three) return null;
+    applyProgress(r);
+    const { camera, curve, heightAt } = three;
+    const u = routeU(r);
+    const tgt = curve.getPointAt(Math.min(u, 1));
+    const tan = curve.getTangentAt(Math.min(u, 0.995)).setY(0).normalize();
+    const dir = new THREE.Vector3(); camera.getWorldDirection(dir); dir.y = 0; dir.normalize();
+    const yaw = Math.round(Math.acos(Math.max(-1, Math.min(1, dir.dot(tan)))) * 180 / Math.PI);
+    const cp = camera.position;
+    const groundUnderCam = heightAt(LON0 + cp.x / MPERLON, LAT0 - cp.z / MPERLAT);
+    /* nearest waypoint flag */
+    const idx = Math.round(r * (SPOTS - 1)); const w = ROUTE[idx]; const l = toLocal(w.lon, w.lat);
+    const fy = Math.max(w.alt, heightAt(w.lon, w.lat)) + poleFor(SPOTS - idx);
+    const flag = new THREE.Vector3(l.x, fy, l.z);
+    let blocked = 0;
+    for(let k = 1; k < 24; k++){
+      const f = k / 24;
+      const x = cp.x + (flag.x - cp.x) * f, z = cp.z + (flag.z - cp.z) * f, y = cp.y + (flag.y - cp.y) * f;
+      if(heightAt(LON0 + x / MPERLON, LAT0 - z / MPERLAT) > y) blocked++;
+    }
+    const ndc = flag.clone().project(camera);
+    return { r: +r.toFixed(3), wp: w.name, yawDeg: yaw, camAboveGround: Math.round(cp.y - groundUnderCam),
+      camAboveTarget: Math.round(cp.y - tgt.y), dist: Math.round(cp.distanceTo(tgt)),
+      blockedSamples: blocked, flagNdc: [+ndc.x.toFixed(2), +ndc.y.toFixed(2)] };
+  };
   window.__flags = () => !three ? null : { ease: three.ridgeEase, cam: three.camera.position.toArray().map(Math.round),
     flags: three.flagGroup.children.filter(f=>f.userData.rank <= 5).map(f=>({ r: f.userData.rank, sx: Math.round(f.scale.x),
       pos: f.position.toArray().map(Math.round), base: f.userData.base && f.userData.base.toArray().map(Math.round),
