@@ -2263,10 +2263,17 @@
       sp.visible = op > 0.02;
     });
   }
+  /* every frame starts from the base size — the presence/ridge passes below
+     multiply into it, so nothing can compound across frames */
+  function resetFlagScales(){
+    if(!three || !three.flagGroup) return;
+    three.flagGroup.children.forEach(sp=>setFlagScale(sp, flagBase(sp.userData.rank) * spriteK()));
+  }
   function renderTerrain(){
     if(!three) return;
     if(focus){ renderFocusFrame(); return; }
     cameraAt(lastT);
+    resetFlagScales();
     fitFlagScales();
     ridgeFrame();
     flagPresence();
