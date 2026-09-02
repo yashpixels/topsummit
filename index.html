@@ -817,10 +817,10 @@
     <div class="focus-sponsor" id="focusSponsor" hidden>
       <img id="fsLogo" alt="">
       <span class="fs-main">
-        <a id="fsLink" target="_blank" rel="sponsored noopener nofollow"></a><span class="fs-badge">✓ verified</span>
+        <a id="fsLink" target="_blank" rel="noopener"></a><span class="fs-badge">✓ verified</span>
         <p id="fsTag"></p>
       </span>
-      <a class="fs-visit" id="fsVisit" target="_blank" rel="sponsored noopener nofollow">Visit site ↗</a>
+      <a class="fs-visit" id="fsVisit" target="_blank" rel="noopener">Visit site ↗</a>
     </div>
     <div class="fs-stats" id="fsStats" hidden>
       <span><b id="fsRank">#1</b>rank</span>
@@ -980,7 +980,7 @@
       <div class="champ-card">
         <img id="champLogo" alt="" src="">
         <span class="cd">
-          <a id="champLink" href="#" target="_blank" rel="noopener nofollow">—</a>
+          <a id="champLink" href="#" target="_blank" rel="noopener">—</a>
           <small><span id="champBid">—</span> · <span id="champClicks">0 clicks</span></small>
         </span>
       </div>
@@ -1344,7 +1344,7 @@
       if(s){
         const a = document.createElement("a");
         a.href = "https://" + s.domain;
-        a.target = "_blank"; a.rel = "noopener nofollow";
+        a.target = "_blank"; a.rel = "noopener";
         a.textContent = s.domain;
         a.addEventListener("click", ()=>trackClick(s.domain));
         domEl.appendChild(a);
@@ -1374,7 +1374,7 @@
     if(top){
       const a = document.createElement("a");
       a.href = "https://" + top.domain;
-      a.target = "_blank"; a.rel = "sponsored noopener nofollow";
+      a.target = "_blank"; a.rel = "noopener";
       a.textContent = top.domain;
       a.addEventListener("click", ()=>trackClick(top.domain));
       topEl.appendChild(a);
@@ -1423,7 +1423,7 @@
     img.src = faviconUrl(domain); img.alt = "";
     const fd = document.createElement("span"); fd.className = "fd";
     const a = document.createElement("a");
-    a.href = "https://" + domain; a.target = "_blank"; a.rel = "noopener nofollow";
+    a.href = "https://" + domain; a.target = "_blank"; a.rel = "noopener";
     a.textContent = domain;
     a.addEventListener("click", ()=>trackClick(domain));
     const small = document.createElement("small"); small.textContent = sub;
