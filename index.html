@@ -1072,7 +1072,7 @@
   /* portrait phones: widen the field of view so the valley isn't a keyhole,
      and shrink the flag sprites so a card never outgrows the screen */
   function fovFor(){ const a = innerWidth / innerHeight; return a < 1 ? 55 + (1 - a) * 40 : 55; }
-  function spriteK(){ return innerWidth < innerHeight ? 0.58 : 1; }
+  function spriteK(){ return innerWidth < innerHeight ? 0.8 : 1; }
   if(navigator.maxTouchPoints > 1){
     document.getElementById("focusHint").textContent =
       "Drag to look around · pinch to zoom · it slowly circles on its own.";
@@ -1983,7 +1983,7 @@
     const tex = new THREE.CanvasTexture(cvs);
     /* depthWrite off so the sprite's transparent pixels never punch holes in
        the imagery patches rendered around it */
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:true, depthWrite:false, transparent:true}));
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:true, depthWrite:false, transparent:true, fog:!MOBILE}));
     sp.renderOrder = 10;
     if(spot){
       /* fetch the company favicon via CORS-friendly sources (Google's favicon
@@ -2080,10 +2080,25 @@
     const f = Math.min(Math.max((altM - 4300) / 4000, 0), 1);
     three.starMats.forEach(m=>{ m.opacity = f * m.userData.baseOpacity; });
   }
+  /* phones: a flag never shrinks below ~a quarter of the screen width, so the
+     next camps are readable long before the camera reaches them */
+  function fitFlagScales(){
+    if(!three || !three.flagGroup || !MOBILE) return;
+    const cam = three.camera;
+    const halfW = Math.tan(cam.fov * Math.PI / 360) * cam.aspect;
+    three.flagGroup.children.forEach(sp=>{
+      const base = (sp.userData.rank === 1 ? 1050 : 760) * spriteK();
+      const d = sp.position.distanceTo(cam.position);
+      const want = 2 * d * halfW * 0.26;
+      const s = Math.min(Math.max(base, want), base * 3);
+      sp.scale.set(s, s/2, 1);
+    });
+  }
   function renderTerrain(){
     if(!three) return;
     if(focus){ renderFocusFrame(); return; }
     cameraAt(lastT);
+    fitFlagScales();
     three.renderer.render(three.scene, three.camera);
   }
 
@@ -2132,7 +2147,11 @@
     lockScroll(true);
     document.body.classList.add("focus-active");
     /* only the chosen flag stays in the scene */
-    if(three.flagGroup) three.flagGroup.children.forEach(ch=>{ ch.visible = ch.userData.rank === rank; });
+    if(three.flagGroup) three.flagGroup.children.forEach(ch=>{
+      ch.visible = ch.userData.rank === rank;
+      const s = (ch.userData.rank === 1 ? 1050 : 760) * spriteK();
+      ch.scale.set(s, s/2, 1);
+    });
     /* stream an ultra-res satellite patch around this waypoint */
     if(three.ensureSpotPatch) three.ensureSpotPatch(rank);
     lastInteract = Date.now();
