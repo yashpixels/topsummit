@@ -2413,8 +2413,12 @@
       invalidateOnRefresh:true
     });
 
+    /* fromTo with explicit end values — gsap.from would capture the leftover
+       opacity:0 from a previous init as the end state on re-runs, leaving the
+       sections permanently invisible */
     gsap.utils.toArray("[data-reveal]").forEach(el=>{
-      gsap.from(el, {y:50, opacity:0, duration:1.2, ease:"power3.out",
+      gsap.fromTo(el, {y:50, opacity:0}, {y:0, opacity:1, duration:1.2,
+        ease:"power3.out", overwrite:"auto",
         scrollTrigger:{trigger:el, start:"top 82%"}});
     });
     /* (hero fade is handled deterministically in the master trigger above) */
@@ -2423,8 +2427,9 @@
       const card = sec.querySelector(".flag-card");
       const wp = sec.querySelector(".waypoint");
       gsap.timeline({ scrollTrigger:{ trigger:sec, start:"top 72%" } })
-        .from(wp, {x:-30, opacity:0, duration:0.8, ease:"power3.out"}, 0)
-        .from(card, {y:80, opacity:0, rotate:i%2 ? 1.4 : -1.4, duration:1.15, ease:"power4.out"}, 0.1);
+        .fromTo(wp, {x:-30, opacity:0}, {x:0, opacity:1, duration:0.8, ease:"power3.out", overwrite:"auto"}, 0)
+        .fromTo(card, {y:80, opacity:0, rotate:i%2 ? 1.4 : -1.4},
+          {y:0, opacity:1, rotate:0, duration:1.15, ease:"power4.out", overwrite:"auto"}, 0.1);
     });
 
     gsap.timeline({
