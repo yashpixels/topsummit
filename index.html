@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>TopSummit.lol — Claim a spot on Everest. Half goes to Nepal flood relief.</title>
 <meta name="description" content="14 sponsor spots up the real Everest route. Prices start at $1. Anyone can cut in for a dollar more. 50% of every claim funds Nepal flood relief.">
+<link rel="canonical" href="https://topsummit.lol/">
+<meta name="theme-color" content="#0B1526">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="TopSummit.lol">
+<meta property="og:title" content="TopSummit.lol — The internet's highest ad space">
+<meta property="og:description" content="14 flags on the real Everest. Plant yours from $1; anyone can cut in for $1 more. Half of every dollar goes to Nepal flood relief.">
+<meta property="og:url" content="https://topsummit.lol/">
+<meta property="og:image" content="https://topsummit.lol/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TopSummit.lol — The internet's highest ad space">
+<meta name="twitter:description" content="14 flags on the real Everest. Plant yours from $1; anyone can cut in for $1 more. Half of every dollar goes to Nepal flood relief.">
+<meta name="twitter:image" content="https://topsummit.lol/assets/og.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"TopSummit.lol","url":"https://topsummit.lol/","description":"A 3D flyover of the real Everest route with 14 sponsor spots. 50% of every claim funds Nepal flood relief."}</script>
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/favicon-180.png">
@@ -177,6 +192,23 @@
     background:rgba(6,12,24,.5);backdrop-filter:blur(6px);
     padding:.7rem 1rem;border-radius:12px}
   .form-error{color:var(--orange-lit);font-size:.84rem;font-weight:700;min-height:1.3em;margin-top:.45rem}
+  /* the claim form can fold away so the flyover owns the first screen */
+  .hero-min{
+    margin-top:.5rem;background:rgba(6,12,24,.5);border:1px solid var(--line);
+    color:var(--ice-dim);border-radius:999px;padding:.42rem .95rem;
+    font-size:.72rem;font-weight:600;backdrop-filter:blur(6px);
+    transition:color .2s,border-color .2s;
+  }
+  .hero-min:hover{color:var(--cloud);border-color:var(--ice)}
+  .hero-pill{
+    display:inline-flex;align-items:center;gap:.5rem;margin-top:1.4rem;
+    background:var(--orange);color:#fff;border:none;border-radius:999px;
+    padding:.8rem 1.4rem;font-size:.95rem;font-weight:700;
+    box-shadow:0 6px 28px rgba(255,90,31,.4);
+  }
+  .hero-pill span{font-size:.7rem;opacity:.85}
+  .hero.min .subline,.hero.min .claim-bar,.hero.min .target-line,
+  .hero.min .micro,.hero.min .form-error,.hero.min .hero-min{display:none}
   .scroll-cue{
     position:absolute;left:50%;bottom:5svh;transform:translateX(-50%);
     font-size:.7rem;letter-spacing:.34em;text-transform:uppercase;color:var(--ice);
@@ -686,6 +718,8 @@
     .target-line{font-size:.64rem;letter-spacing:.1em}
     .form-error{min-height:0;margin-top:0}
     .scroll-cue{position:static;transform:none;margin-top:1.2rem}
+    .hero-min{backdrop-filter:none;background:rgba(6,12,24,.76);padding:.55rem 1rem;font-size:.74rem}
+    .hero-pill{padding:.85rem 1.4rem;font-size:1rem}
 
     /* camps: the terrain is the star — a tappable waypoint chip rides the
        lower third of the screen while the flag flies above it */
@@ -878,7 +912,9 @@
     cut: pay $1 more than its holder and take their place — they slide one camp down, and the
     bottom flag gets swept back to Kathmandu. Payments handled by Dodo Payments.</p>
   <p class="form-error" id="formError" role="alert"></p>
-  <div class="scroll-cue" data-load="10">Scroll to climb</div>
+  <button class="hero-min" id="heroMin" type="button" data-load="10">— Hide the form, show the mountain</button>
+  <button class="hero-pill" id="heroPill" type="button" hidden>🚩 Claim a spot · from $1 <span>▲</span></button>
+  <div class="scroll-cue" data-load="11">Scroll to climb</div>
 </header>
 
 <!-- THE CAUSE -->
@@ -2206,6 +2242,7 @@
       showFocusForm();
     }else{
       setTarget(rank);
+      setHeroMin(false);
       scrollToEl("#top");
       setTimeout(()=>$("domainInput").focus({preventScroll:true}), REDUCED ? 0 : 900);
     }
@@ -2652,6 +2689,21 @@
 
   /* debug/tuning hooks: preview the camera at any progress 0..1 from the console */
   window.__setProgress = applyProgress;
+
+  /* ---------- hero claim form: minimize / restore ---------- */
+  function setHeroMin(on){
+    document.querySelector(".hero").classList.toggle("min", on);
+    $("heroPill").hidden = !on;
+    try{ localStorage.setItem("topsummit-hero-min", on ? "1" : "0"); }catch(e){}
+    if(HAS_GSAP) ScrollTrigger.refresh();
+    if(scrollMap) buildScrollMap();
+  }
+  $("heroMin").addEventListener("click", ()=>setHeroMin(true));
+  $("heroPill").addEventListener("click", ()=>{
+    setHeroMin(false);
+    setTimeout(()=>$("domainInput").focus({preventScroll:true}), 50);
+  });
+  try{ if(localStorage.getItem("topsummit-hero-min") === "1") setHeroMin(true); }catch(e){}
   window.__scrollMap = () => scrollMap;
   window.__scrollToT = scrollToT;
 
