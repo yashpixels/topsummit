@@ -1140,12 +1140,14 @@
      and shrink the flag sprites so a card never outgrows the screen */
   function fovFor(){ const a = innerWidth / innerHeight; return a < 1 ? 55 + (1 - a) * 40 : 55; }
   function spriteK(){ return innerWidth < innerHeight ? 0.8 : 1; }
-  /* summit card largest; South Summit + Hillary Step sit within 400 m of it,
+  /* summit card largest; the Hillary Step sits 170 m below it,
      so they fly smaller flags to keep the ridge readable */
-  function flagBase(rank){ return rank === 1 ? 900 : rank <= 3 ? 600 : rank === 4 ? 640 : rank <= 13 ? 640 : 760; }
+  function flagBase(rank){ return rank === 1 ? 900 : rank === 2 ? 500 : rank <= 13 ? 640 : 760; }
   /* pole heights: the ridge flags rise in a clean staircase toward the summit;
      elsewhere neighbours alternate so tight camps don't hide each other */
-  function poleFor(rank){ return rank === 1 ? 260 : rank === 2 ? 120 : rank === 3 ? 90 : rank === 4 ? 150 : 150 + (rank % 3) * 110; }
+  /* the Hillary Step sits 170 m below the summit: its card rides low on a short
+     pole while the summit card flies high, so the two stack instead of colliding */
+  function poleFor(rank){ return rank === 1 ? 340 : rank === 2 ? 30 : rank === 3 ? 150 : 150 + (rank % 3) * 110; }
   if(navigator.maxTouchPoints > 1){
     document.getElementById("focusHint").textContent =
       "Drag to look around · pinch to zoom · it slowly circles on its own.";
@@ -1188,6 +1190,7 @@
     {name:"Everest Base Camp",     lon:86.8528, lat:28.0026, alt:5364,  ft:"17,598"},
     {name:"Crampon Point",         lon:86.8640, lat:28.0030, alt:5450,  ft:"17,880"},
     {name:"Khumbu Icefall",        lon:86.8700, lat:28.0010, alt:5700,  ft:"18,700"},
+    {name:"The Football Field",    lon:86.8735, lat:28.0002, alt:5850,  ft:"19,190"},
     {name:"Camp I",                lon:86.8770, lat:27.9990, alt:6065,  ft:"19,900"},
     {name:"Western Cwm",           lon:86.8880, lat:27.9910, alt:6250,  ft:"20,505"},
     {name:"Camp II · Advanced Base",lon:86.8987, lat:27.9836, alt:6400,  ft:"21,000"},
@@ -1197,7 +1200,6 @@
     {name:"Geneva Spur",           lon:86.9275, lat:27.9722, alt:7800,  ft:"25,590"},
     {name:"Camp IV · South Col",   lon:86.9298, lat:27.9735, alt:7950,  ft:"26,085"},
     {name:"The Balcony",           lon:86.9280, lat:27.9800, alt:8400,  ft:"27,600"},
-    {name:"South Summit",          lon:86.9266, lat:27.9842, alt:8749,  ft:"28,704"},
     {name:"Hillary Step",          lon:86.9257, lat:27.9866, alt:8790,  ft:"28,839"},
     {name:"The Summit",            lon:86.9250, lat:27.9881, alt:8849,  ft:"29,032"}
   ];
@@ -1221,6 +1223,7 @@
     "A temporary city rebuilt every spring on the slowly-moving Khumbu Glacier. Climbers live here for weeks, rotating up and down the mountain to let their bodies adapt.",
     "The rocky edge of Base Camp where climbers strap on crampons and clip in before stepping onto the glacier — the true start of the climb, usually in the dark around 3 a.m.",
     "A tumbling cascade of house-sized ice blocks moving about a metre a day. 'Icefall doctors' fix ladders across its crevasses each season; it is the most dangerous stretch of the standard route.",
+    "A rare flat shelf halfway up the Icefall, named for the space to finally walk without ladders. Climbers catch their breath here — briefly, because the seracs on every side are still moving.",
     "Perched above the Khumbu Icefall at 6,065 m — a shifting maze of seracs and crevasses crossed on aluminium ladders, usually before dawn while the ice is still frozen hard.",
     "The 'Valley of Silence': a broad, windless glacial basin between Everest, Lhotse and Nuptse. Trapped sunlight can push it to 35 °C by day, then it freezes hard at night.",
     "Advanced Base Camp at 6,400 m, tucked on the moraine at the head of the Cwm. Most expeditions make it their high-altitude home for the summit push, with a kitchen and mess tents.",
@@ -1230,7 +1233,6 @@
     "A black rock rib at ~7,800 m named by the 1952 Swiss expedition. Climbers traverse its crest on fixed lines to reach the South Col — the last obstacle before the death zone.",
     "The wind-scoured saddle between Everest and Lhotse at 7,950 m — the doorstep of the death zone, where the body can no longer recover and summit pushes launch around midnight.",
     "A small ledge at ~8,400 m where climbers swap oxygen bottles at dawn and catch their first view of the summit ridge. The last 450 vertical metres take most of the morning.",
-    "A snow dome at 8,749 m, just 100 m below the true top. From here climbers first see the knife-edge summit ridge and the Hillary Step — and many turn around.",
     "The famous 12-metre rock step at ~8,790 m, first climbed by Hillary and Tenzing in 1953. Since the 2015 earthquake it has largely collapsed into a snow slope, but it is still the last real obstacle.",
     "The roof of the world: 8,849 m — 29,032 ft. The jet stream hammers it for most of the year, the air carries a third of sea-level oxygen, and climbers usually get only minutes on top."
   ];
@@ -2147,7 +2149,7 @@
     const tangent = curve.getTangentAt(Math.min(t, 0.995)).setY(0).normalize();
     three.lastAltM = target.y;
     setStarOpacity(target.y);
-    /* the summit ridge (Balcony -> South Summit -> Hillary Step -> Summit) runs
+    /* the summit ridge (Balcony -> Hillary Step -> Summit) runs
        straight away from the flight path, so seen from behind its four flags stack
        in depth. Over the last legs the camera swings out to the side of the ridge
        and pulls back, so the ascent reads as a clear left-to-right staircase. */
@@ -2155,8 +2157,8 @@
     const ease = ridge * ridge * (3 - 2 * ridge);
     three.ridgeEase = ease;
     /* pull in tight on the upper mountain: 5.4 km back -> 1.5 km, 1.6 km up -> 450 m */
-    const back = 5400 - t * 3900 + ease * 900;
-    const up = 1600 - t * 1150 + ease * 200;
+    const back = 5400 - t * 3900 + ease * 450;
+    const up = 1600 - t * 1150 + ease * 120;
     /* gentle swing keeps the camera in the valley rather than behind side ridges */
     const swing = Math.sin(t * Math.PI * 1.35) * 0.5 + ease * 1.75 + orbitExtra;
     const off = tangent.clone().multiplyScalar(-back);
@@ -2202,96 +2204,26 @@
     three.flagGroup.children.forEach(sp=>{
       const base = flagBase(sp.userData.rank) * spriteK();
       /* the ridge staircase is laid out at exact base sizes — never inflate it */
-      if(ridgeOn && sp.userData.rank <= 4){ sp.scale.set(base, base/2, 1); return; }
+      if(ridgeOn && sp.userData.rank <= 3){ sp.scale.set(base, base/2, 1); return; }
       const d = sp.position.distanceTo(cam.position);
       const want = 2 * d * halfW * 0.26;
       const s = Math.min(Math.max(base, want), base * 3);
       sp.scale.set(s, s/2, 1);
     });
   }
-  /* the summit ridge packs three flags (South Summit, Hillary Step, Summit)
-     into ~450 m — from the flight path their cards would stack. Each frame,
-     a lower-ranked ridge flag that would cover a higher one slides sideways
-     along the ridge until its card is clear, so the summit is never hidden. */
-  const _ndc = new THREE.Vector3(), _right = new THREE.Vector3();
-  /* ridge mode: a fixed staircase. The summit card stays on the peak; Hillary
-     Step, South Summit and the Balcony fan out along the ridge on the Balcony's
-     side, each pole lower than the last, so the ascent reads left-to-right. */
-  const RIDGE_OFFSET = { 1: 0, 2: 800, 3: 1420, 4: 1960 };
-  const _tgt = new THREE.Vector3();
-  function layoutRidge(e){
-    const cam = three.camera;
-    const byRank = {};
-    three.flagGroup.children.forEach(sp=>{ if(sp.userData.rank <= 4 && sp.userData.base) byRank[sp.userData.rank] = sp; });
-    if(!byRank[1] || !byRank[4]) return;
-    _right.set(1, 0, 0).applyQuaternion(cam.quaternion); _right.y = 0; _right.normalize();
-    const sx = _ndc.copy(byRank[1].userData.base).project(cam).x;
-    const bx = _ndc.copy(byRank[4].userData.base).project(cam).x;
-    /* fan out into the open side of the frame (away from where the Balcony
-       naturally projects), so the staircase never runs off the screen edge */
-    const dir = bx >= sx ? -1 : 1;
-    const sb = byRank[1].userData.base;
-    for(const r of [1, 2, 3, 4]){
-      const sp = byRank[r];
-      if(!sp) continue;
-      /* target: beside the summit at an exact spacing, keeping this flag's own
-         height so the poles still rise toward the peak */
-      _tgt.set(sb.x, sp.userData.base.y, sb.z).addScaledVector(_right, dir * RIDGE_OFFSET[r]);
-      sp.position.copy(sp.userData.base).lerp(_tgt, e);
-    }
-    /* the South Col group sits right under the camera here — let it recede */
+  /* ridge frame: every flag stays on its real spot. While the camera is beside
+     the summit ridge, the South Col group (right under the camera) recedes so it
+     doesn't loom over the ascent. */
+  function ridgeFrame(){
+    if(!three || !three.flagGroup) return;
+    const e = three.ridgeEase || 0;
     three.flagGroup.children.forEach(sp=>{
+      if(sp.userData.base) sp.position.copy(sp.userData.base);
       const r = sp.userData.rank;
-      if(r >= 5 && r <= 8){
-        const k = (1 - 0.5 * e);
-        const b = flagBase(r) * spriteK() * k;
+      if(e > 0.001 && r >= 4 && r <= 7){
+        const b = flagBase(r) * spriteK() * (1 - 0.5 * e);
         sp.scale.set(b, b/2, 1);
       }
-    });
-  }
-  function separateRidgeFlags(){
-    if(!three || !three.flagGroup) return;
-    if((three.ridgeEase || 0) > 0.001){ layoutRidge(three.ridgeEase); return; }
-    const cam = three.camera;
-    const flags = three.flagGroup.children
-      .filter(sp=>sp.visible && sp.userData.rank <= 4 && sp.userData.base)
-      .sort((a, b)=>a.userData.rank - b.userData.rank);
-    if(flags.length < 2) return;
-    _right.set(1, 0, 0).applyQuaternion(cam.quaternion); _right.y = 0; _right.normalize();
-    const tanH = Math.tan(cam.fov * Math.PI / 360);
-    const rectOf = sp=>{
-      const d = sp.position.distanceTo(cam.position);
-      const halfH = d * tanH;                       /* world half-height at that depth */
-      _ndc.copy(sp.position).project(cam);
-      return { x:_ndc.x, y:_ndc.y, z:_ndc.z, hw:(sp.scale.x / 2) / (halfH * cam.aspect),
-               hh:(sp.scale.y / 2) / halfH, halfH, d };
-    };
-    const placed = [];
-    flags.forEach((sp, i)=>{
-      sp.position.copy(sp.userData.base);
-      let r = rectOf(sp);
-      if(r.z > 1 || r.z < -1){ return; }              /* behind the camera: leave it */
-      const overlaps = q => placed.find(p=>Math.abs(p.x - q.x) < p.hw + q.hw + 0.015 && Math.abs(p.y - q.y) < p.hh + q.hh);
-      if(overlaps(r)){
-        /* try sliding left and right; keep whichever clears every neighbour with
-           the shorter move (in NDC), so flags never ping-pong between two cards */
-        let best = null;
-        for(const dir of [1, -1]){
-          let q = { ...r }, moved = 0;
-          for(let k = 0; k < 6; k++){
-            const hit = overlaps(q);
-            if(!hit) break;
-            const need = (hit.hw + q.hw + 0.02) - dir * (q.x - hit.x);
-            q.x += dir * need; moved += need;
-          }
-          if(!overlaps(q) && (best === null || moved < best.moved)) best = { dir, moved };
-        }
-        if(best){
-          sp.position.addScaledVector(_right, best.dir * best.moved * r.halfH * cam.aspect);
-          r = rectOf(sp);
-        }
-      }
-      placed.push(r);
     });
   }
   function renderTerrain(){
@@ -2299,7 +2231,7 @@
     if(focus){ renderFocusFrame(); return; }
     cameraAt(lastT);
     fitFlagScales();
-    separateRidgeFlags();
+    ridgeFrame();
     three.renderer.render(three.scene, three.camera);
   }
 
