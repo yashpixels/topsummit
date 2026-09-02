@@ -1142,7 +1142,10 @@
   function spriteK(){ return innerWidth < innerHeight ? 0.8 : 1; }
   /* summit card largest; South Summit + Hillary Step sit within 400 m of it,
      so they fly smaller flags to keep the ridge readable */
-  function flagBase(rank){ return rank === 1 ? 1050 : rank <= 3 ? 560 : rank <= 13 ? 640 : 760; }
+  function flagBase(rank){ return rank === 1 ? 900 : rank <= 3 ? 600 : rank === 4 ? 640 : rank <= 13 ? 640 : 760; }
+  /* pole heights: the ridge flags rise in a clean staircase toward the summit;
+     elsewhere neighbours alternate so tight camps don't hide each other */
+  function poleFor(rank){ return rank === 1 ? 260 : rank === 2 ? 120 : rank === 3 ? 90 : rank === 4 ? 150 : 150 + (rank % 3) * 110; }
   if(navigator.maxTouchPoints > 1){
     document.getElementById("focusHint").textContent =
       "Drag to look around · pinch to zoom · it slowly circles on its own.";
@@ -2113,7 +2116,7 @@
       const w = wpForRank(r);
       const l = toLocal(w.lon, w.lat);
       /* staggered pole heights so the tightly-packed climb flags don't hide each other */
-      const y = Math.max(w.alt, three.heightAt(w.lon, w.lat)) + (r === 1 ? 220 : 150 + (r % 3) * 110);
+      const y = Math.max(w.alt, three.heightAt(w.lon, w.lat)) + poleFor(r);
       const sp = flagSprite(spot, r);
       const s = flagBase(r) * spriteK();
       sp.scale.set(s, s/2, 1);
@@ -2144,11 +2147,18 @@
     const tangent = curve.getTangentAt(Math.min(t, 0.995)).setY(0).normalize();
     three.lastAltM = target.y;
     setStarOpacity(target.y);
+    /* the summit ridge (Balcony -> South Summit -> Hillary Step -> Summit) runs
+       straight away from the flight path, so seen from behind its four flags stack
+       in depth. Over the last legs the camera swings out to the side of the ridge
+       and pulls back, so the ascent reads as a clear left-to-right staircase. */
+    const ridge = Math.min(Math.max((t - 0.84) / 0.16, 0), 1);
+    const ease = ridge * ridge * (3 - 2 * ridge);
+    three.ridgeEase = ease;
     /* pull in tight on the upper mountain: 5.4 km back -> 1.5 km, 1.6 km up -> 450 m */
-    const back = 5400 - t * 3900;
-    const up = 1600 - t * 1150;
+    const back = 5400 - t * 3900 + ease * 900;
+    const up = 1600 - t * 1150 + ease * 200;
     /* gentle swing keeps the camera in the valley rather than behind side ridges */
-    const swing = Math.sin(t * Math.PI * 1.35) * 0.5 + orbitExtra;
+    const swing = Math.sin(t * Math.PI * 1.35) * 0.5 + ease * 1.75 + orbitExtra;
     const off = tangent.clone().multiplyScalar(-back);
     const cosS = Math.cos(swing), sinS = Math.sin(swing);
     const ox = off.x * cosS - off.z * sinS;
@@ -2188,8 +2198,11 @@
     if(!three || !three.flagGroup || !MOBILE) return;
     const cam = three.camera;
     const halfW = Math.tan(cam.fov * Math.PI / 360) * cam.aspect;
+    const ridgeOn = (three.ridgeEase || 0) > 0.001;
     three.flagGroup.children.forEach(sp=>{
       const base = flagBase(sp.userData.rank) * spriteK();
+      /* the ridge staircase is laid out at exact base sizes — never inflate it */
+      if(ridgeOn && sp.userData.rank <= 4){ sp.scale.set(base, base/2, 1); return; }
       const d = sp.position.distanceTo(cam.position);
       const want = 2 * d * halfW * 0.26;
       const s = Math.min(Math.max(base, want), base * 3);
@@ -2201,8 +2214,44 @@
      a lower-ranked ridge flag that would cover a higher one slides sideways
      along the ridge until its card is clear, so the summit is never hidden. */
   const _ndc = new THREE.Vector3(), _right = new THREE.Vector3();
+  /* ridge mode: a fixed staircase. The summit card stays on the peak; Hillary
+     Step, South Summit and the Balcony fan out along the ridge on the Balcony's
+     side, each pole lower than the last, so the ascent reads left-to-right. */
+  const RIDGE_OFFSET = { 1: 0, 2: 800, 3: 1420, 4: 1960 };
+  const _tgt = new THREE.Vector3();
+  function layoutRidge(e){
+    const cam = three.camera;
+    const byRank = {};
+    three.flagGroup.children.forEach(sp=>{ if(sp.userData.rank <= 4 && sp.userData.base) byRank[sp.userData.rank] = sp; });
+    if(!byRank[1] || !byRank[4]) return;
+    _right.set(1, 0, 0).applyQuaternion(cam.quaternion); _right.y = 0; _right.normalize();
+    const sx = _ndc.copy(byRank[1].userData.base).project(cam).x;
+    const bx = _ndc.copy(byRank[4].userData.base).project(cam).x;
+    /* fan out into the open side of the frame (away from where the Balcony
+       naturally projects), so the staircase never runs off the screen edge */
+    const dir = bx >= sx ? -1 : 1;
+    const sb = byRank[1].userData.base;
+    for(const r of [1, 2, 3, 4]){
+      const sp = byRank[r];
+      if(!sp) continue;
+      /* target: beside the summit at an exact spacing, keeping this flag's own
+         height so the poles still rise toward the peak */
+      _tgt.set(sb.x, sp.userData.base.y, sb.z).addScaledVector(_right, dir * RIDGE_OFFSET[r]);
+      sp.position.copy(sp.userData.base).lerp(_tgt, e);
+    }
+    /* the South Col group sits right under the camera here — let it recede */
+    three.flagGroup.children.forEach(sp=>{
+      const r = sp.userData.rank;
+      if(r >= 5 && r <= 8){
+        const k = (1 - 0.5 * e);
+        const b = flagBase(r) * spriteK() * k;
+        sp.scale.set(b, b/2, 1);
+      }
+    });
+  }
   function separateRidgeFlags(){
     if(!three || !three.flagGroup) return;
+    if((three.ridgeEase || 0) > 0.001){ layoutRidge(three.ridgeEase); return; }
     const cam = three.camera;
     const flags = three.flagGroup.children
       .filter(sp=>sp.visible && sp.userData.rank <= 4 && sp.userData.base)
@@ -2776,6 +2825,10 @@
 
   /* debug/tuning hooks: preview the camera at any progress 0..1 from the console */
   window.__setProgress = applyProgress;
+  window.__flags = () => !three ? null : { ease: three.ridgeEase, cam: three.camera.position.toArray().map(Math.round),
+    flags: three.flagGroup.children.filter(f=>f.userData.rank <= 5).map(f=>({ r: f.userData.rank, sx: Math.round(f.scale.x),
+      pos: f.position.toArray().map(Math.round), base: f.userData.base && f.userData.base.toArray().map(Math.round),
+      d: Math.round(f.position.distanceTo(three.camera.position)) })) };
 
   /* ---------- hero claim form: minimize / restore ---------- */
   function setHeroMin(on){
