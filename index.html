@@ -2370,7 +2370,16 @@
     });
   }
   $("ctlTop").addEventListener("click",()=>scrollToEl("#top"));
-  $("footTop").addEventListener("click",e=>{ e.preventDefault(); scrollToEl("#top"); });
+  /* route every in-page anchor through lenis — native hash jumps get snapped
+     back by its internal scroll position */
+  document.addEventListener("click", e => {
+    const a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if(!a) return;
+    const sel = a.getAttribute("href");
+    if(sel === "#" || !document.querySelector(sel)) return;
+    e.preventDefault();
+    scrollToEl(sel);
+  });
 
   function heroLoadFX(){
     if(!HAS_GSAP || REDUCED) return;
